@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { GHANA_REGIONS } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/ToastProvider'
 
 export default function SettingsForm({ settings }: { settings: any }) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -55,9 +57,12 @@ export default function SettingsForm({ settings }: { settings: any }) {
       }
       if (err) throw err
       setSaved(true)
+      success('Settings saved successfully')
       router.refresh()
     } catch (err: any) {
-      setError(err.message ?? 'Failed to save settings')
+      const msg = err.message ?? 'Failed to save settings'
+      setError(msg)
+      toastError(msg)
     } finally {
       setLoading(false)
     }

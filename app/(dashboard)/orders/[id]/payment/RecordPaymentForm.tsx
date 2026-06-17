@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, PAYMENT_METHOD_LABELS } from '@/lib/utils'
+import { useToast } from '@/components/ui/ToastProvider'
 
 interface Props {
   orderId: string
@@ -24,6 +25,7 @@ const MOBILE_MONEY_METHODS = ['mtn_mobile_money', 'vodafone_cash', 'airteltigo_m
 
 export default function RecordPaymentForm({ orderId, invoiceId, customerId, balanceDue, orderNumber }: Props) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -64,10 +66,13 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
       const { error: insertError } = await supabase.from('payments').insert(payload)
       if (insertError) throw insertError
 
+      success('Payment recorded successfully')
       router.push(`/orders/${orderId}`)
       router.refresh()
     } catch (err: any) {
-      setError(err.message ?? 'Failed to record payment')
+      const msg = err.message ?? 'Failed to record payment'
+      setError(msg)
+      toastError(msg)
     } finally {
       setLoading(false)
     }

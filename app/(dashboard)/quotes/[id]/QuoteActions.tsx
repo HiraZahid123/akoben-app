@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { quoteEmailHtml } from '@/lib/email-client'
+import { useToast } from '@/components/ui/ToastProvider'
 import type { QuoteStatus } from '@/types/database'
 
 interface Props {
@@ -18,12 +19,12 @@ interface Props {
 
 export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerName, total, expiresAt }: Props) {
   const router = useRouter()
+  const { success, error: toastError, info } = useToast()
   const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState('')
 
   async function sendQuoteEmail() {
-    if (!customerEmail) { setMsg('No email on file for this customer'); return }
-    setLoading(true); setMsg('')
+    if (!customerEmail) { toastError('No email on file for this customer'); return }
+    setLoading(true)
     try {
       const res = await fetch('/api/send-email', {
         method: 'POST',
@@ -36,10 +37,10 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
       })
       if (res.ok) {
         await supabase.from('quotes').update({ status: 'sent' }).eq('id', quoteId)
-        setMsg('Quote sent successfully!')
+        success(`Quote emailed to ${customerEmail}`)
         router.refresh()
       } else {
-        setMsg('Failed to send email')
+        toastError('Failed to send email')
       }
     } finally {
       setLoading(false)
@@ -49,6 +50,7 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
   async function markAccepted() {
     setLoading(true)
     await supabase.from('quotes').update({ status: 'accepted' }).eq('id', quoteId)
+    success('Quote marked as accepted')
     router.refresh()
     setLoading(false)
   }
@@ -86,14 +88,16 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
         }))
       )
       await supabase.from('quotes').update({ status: 'accepted', converted_to_order: order.id }).eq('id', quoteId)
+      success('Quote converted to order')
       router.push(`/orders/${order.id}`)
+    } else {
+      toastError('Failed to convert quote to order')
     }
     setLoading(false)
   }
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {msg && <span className="text-xs text-gray-500">{msg}</span>}
       {currentStatus === 'draft' && (
         <button onClick={sendQuoteEmail} disabled={loading}
           className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
