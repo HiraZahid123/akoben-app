@@ -57,7 +57,7 @@ export default function BarcodeScanner() {
       .select('id, scanned_at, barcode, action, result, inventory_units(unit_number, inventory_items(name))')
       .order('scanned_at', { ascending: false })
       .limit(20)
-    if (data) setLog(data as ScanLogEntry[])
+    if (data) setLog(data as unknown as ScanLogEntry[])
   }
 
   async function startCamera() {

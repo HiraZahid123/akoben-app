@@ -7,13 +7,14 @@ export default async function EditCustomerPage({ params }: { params: Promise<{ i
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const { data: customer } = await supabase
+  const { data: customerData } = await supabase
     .from('customers')
     .select('*')
     .eq('id', id)
     .single()
 
-  if (!customer) notFound()
+  if (!customerData) notFound()
+  const customer = customerData as any
 
   return (
     <div>

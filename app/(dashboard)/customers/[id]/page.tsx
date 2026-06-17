@@ -8,13 +8,16 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: customer }, { data: orders }, { data: comms }] = await Promise.all([
+  const [r1, r2, r3] = await Promise.all([
     supabase.from('customers').select('*').eq('id', id).single(),
     supabase.from('orders_with_customer').select('*').eq('customer_id', id).order('created_at', { ascending: false }),
     supabase.from('crm_communication_log').select('*').eq('customer_id', id).order('created_at', { ascending: false }).limit(10),
   ])
 
-  if (!customer) notFound()
+  if (!r1.data) notFound()
+  const customer = r1.data as any
+  const orders = (r2.data ?? []) as any[]
+  const comms = (r3.data ?? []) as any[]
 
   const CHANNEL_ICONS: Record<string, string> = {
     email: '✉️', sms: '💬', whatsapp: '📱',

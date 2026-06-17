@@ -15,7 +15,7 @@ export default async function DashboardPage() {
     supabase.from('orders').select('*', { count: 'exact', head: true }).not('status', 'in', '(draft,cancelled)'),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'overdue'),
-    supabase.from('revenue_by_month').select('revenue_ghs').limit(1),
+    (supabase.from('revenue_by_month') as any).select('revenue_ghs').limit(1),
     supabase.from('customers').select('*', { count: 'exact', head: true }),
   ])
 

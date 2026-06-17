@@ -15,16 +15,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: invoice }, { data: payments }] = await Promise.all([
+  const [r1, r2] = await Promise.all([
     supabase.from('invoices')
       .select('*, customers(id, full_name, company_name, email, phone), orders(id, order_number, event_name, order_items(*, inventory_items(name)))')
       .eq('id', id).single(),
     supabase.from('payments').select('*').eq('invoice_id', id).order('created_at'),
   ])
 
-  if (!invoice) notFound()
-  const customer = invoice.customers as any
-  const order = invoice.orders as any
+  if (!r1.data) notFound()
+  const invoice = r1.data as any
+  const payments = (r2.data ?? []) as any[]
+  const customer = invoice.customers
+  const order = invoice.orders
   const orderItems = order?.order_items ?? []
 
   return (

@@ -37,7 +37,7 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
         }),
       })
       if (res.ok) {
-        await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoiceId)
+        await (supabase.from('invoices') as any).update({ status: 'sent' }).eq('id', invoiceId)
         success(`Invoice emailed to ${customerEmail}`)
         router.refresh()
       } else {
@@ -49,7 +49,7 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
   async function markVoid() {
     if (!confirm('Mark this invoice as void?')) return
     setLoading(true)
-    await supabase.from('invoices').update({ status: 'void' }).eq('id', invoiceId)
+    await (supabase.from('invoices') as any).update({ status: 'void' }).eq('id', invoiceId)
     success('Invoice marked as void')
     router.refresh()
     setLoading(false)

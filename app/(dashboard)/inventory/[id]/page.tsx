@@ -17,15 +17,17 @@ export default async function InventoryDetailPage({ params }: { params: Promise<
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: item }, { data: units }] = await Promise.all([
+  const [r1, r2] = await Promise.all([
     supabase.from('inventory_items').select('*, inventory_categories(name)').eq('id', id).single(),
     supabase.from('inventory_units').select('*').eq('item_id', id).order('unit_number'),
   ])
 
-  if (!item) notFound()
+  if (!r1.data) notFound()
+  const item = r1.data as any
+  const units = (r2.data ?? []) as any[]
 
-  const available = units?.filter(u => u.status === 'available').length ?? 0
-  const out = units?.filter(u => u.status === 'out').length ?? 0
+  const available = units.filter(u => u.status === 'available').length
+  const out = units.filter(u => u.status === 'out').length
 
   return (
     <div>

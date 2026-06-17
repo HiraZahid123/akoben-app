@@ -17,15 +17,16 @@ export default async function CRMDetailPage({ params }: { params: Promise<{ id: 
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const { data: log } = await supabase
+  const { data: logData } = await supabase
     .from('crm_communication_log')
     .select('*, customers(id, full_name, company_name, email, phone), orders(id, order_number, event_name)')
     .eq('id', id)
     .single()
 
-  if (!log) notFound()
-  const customer = log.customers as any
-  const order = log.orders as any
+  if (!logData) notFound()
+  const log = logData as any
+  const customer = log.customers
+  const order = log.orders
 
   return (
     <div>
