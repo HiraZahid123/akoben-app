@@ -2,10 +2,8 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,12 +14,25 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(error.message || 'Invalid email or password')
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (error) {
+        setError(error.message || 'Invalid email or password')
+        setLoading(false)
+        return
+      }
+
+      if (data.session) {
+        // Hard navigate so the server middleware picks up the new session cookie
+        window.location.href = '/dashboard'
+      } else {
+        setError('Login succeeded but no session was created. Please try again.')
+        setLoading(false)
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong. Please try again.')
       setLoading(false)
-    } else {
-      router.push('/dashboard')
     }
   }
 
@@ -39,14 +50,12 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
-              <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
+              <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg border border-red-200">
                 {error}
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 required
@@ -57,9 +66,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
                 required
