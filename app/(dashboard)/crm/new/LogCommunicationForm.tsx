@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { invoiceEmailHtml } from '@/lib/email-client'
+import { useToast } from '@/components/ui/ToastProvider'
 
 const CHANNELS = [
   { value: 'email', label: '✉️ Email' },
@@ -22,6 +23,7 @@ interface Props {
 
 export default function LogCommunicationForm({ customers, orders, defaultCustomerId }: Props) {
   const router = useRouter()
+  const { success, error: toastError, warning } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sendingEmail, setSendingEmail] = useState(false)
@@ -78,7 +80,10 @@ export default function LogCommunicationForm({ customers, orders, defaultCustome
           }),
         })
         setSendingEmail(false)
-        if (!res.ok) {
+        if (res.ok) {
+          success(`Email sent to ${selectedCustomer.email}`)
+        } else {
+          warning('Email failed to send — communication logged without sending')
           setError('Email failed to send. Log saved without sending.')
         }
       }
@@ -86,10 +91,15 @@ export default function LogCommunicationForm({ customers, orders, defaultCustome
       const { error: insertError } = await supabase.from('crm_communication_log').insert(payload)
       if (insertError) throw insertError
 
+      if (form.channel !== 'email' || form.direction !== 'outbound') {
+        success('Communication logged successfully')
+      }
       router.push('/crm')
       router.refresh()
     } catch (err: any) {
-      setError(err.message ?? 'Failed to save')
+      const msg = err.message ?? 'Failed to save'
+      setError(msg)
+      toastError(msg)
     } finally {
       setLoading(false)
     }

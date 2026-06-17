@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { GHANA_REGIONS } from '@/lib/utils'
+import { useToast } from '@/components/ui/ToastProvider'
 import type { Customer } from '@/types/database'
 
 interface Props {
@@ -15,6 +16,7 @@ const CUSTOMER_TYPES = ['individual', 'corporate', 'planner', 'nonprofit'] as co
 
 export default function CustomerForm({ customer, mode }: Props) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -75,8 +77,10 @@ export default function CustomerForm({ customer, mode }: Props) {
 
     if (err) {
       setError(err.message)
+      toastError(err.message)
       setSaving(false)
     } else {
+      success(mode === 'create' ? 'Customer created successfully' : 'Customer updated successfully')
       router.push('/customers')
       router.refresh()
     }

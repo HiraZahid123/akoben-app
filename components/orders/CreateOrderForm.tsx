@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, GHANA_REGIONS, GHANA_VAT_RATE } from '@/lib/utils'
+import { useToast } from '@/components/ui/ToastProvider'
 
 interface CustomerOption { id: string; full_name: string; company_name: string | null; phone: string | null; discount_pct: number }
 interface ItemOption { id: string; name: string; sku: string | null; rate_daily: number; quantity_available: number; category_name: string | null }
@@ -23,6 +24,7 @@ const DELIVERY_METHODS = [
 
 export default function CreateOrderForm({ customers, inventoryItems }: { customers: CustomerOption[]; inventoryItems: ItemOption[] }) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -128,7 +130,9 @@ export default function CreateOrderForm({ customers, inventoryItems }: { custome
       .single()
 
     if (oErr || !order) {
-      setError(oErr?.message ?? 'Failed to create order')
+      const msg = oErr?.message ?? 'Failed to create order'
+      setError(msg)
+      toastError(msg)
       setSaving(false)
       return
     }
@@ -145,10 +149,12 @@ export default function CreateOrderForm({ customers, inventoryItems }: { custome
     const { error: itemsErr } = await supabase.from('order_items').insert(orderItemsPayload)
     if (itemsErr) {
       setError(itemsErr.message)
+      toastError(itemsErr.message)
       setSaving(false)
       return
     }
 
+    success('Order created successfully')
     router.push(`/orders/${order.id}`)
   }
 

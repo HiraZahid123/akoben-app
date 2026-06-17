@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, GHANA_VAT_RATE } from '@/lib/utils'
+import { useToast } from '@/components/ui/ToastProvider'
 
 interface CustomerOption { id: string; full_name: string; company_name: string | null; email: string | null; phone: string | null; discount_pct: number }
 interface ItemOption { id: string; name: string; sku: string | null; rate_daily: number; quantity_available: number; category_name: string | null }
@@ -13,6 +14,7 @@ const EVENT_TYPES = ['wedding','traditional_wedding','outdooring','naming_ceremo
 
 export default function CreateQuoteForm({ customers, inventoryItems }: { customers: CustomerOption[]; inventoryItems: ItemOption[] }) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -82,7 +84,13 @@ export default function CreateQuoteForm({ customers, inventoryItems }: { custome
       quote_number:    '',
     }).select().single()
 
-    if (qErr || !quote) { setError(qErr?.message ?? 'Failed'); setSaving(false); return }
+    if (qErr || !quote) {
+      const msg = qErr?.message ?? 'Failed to create quote'
+      setError(msg)
+      toastError(msg)
+      setSaving(false)
+      return
+    }
 
     await supabase.from('quote_items').insert(
       lineItems.map(li => ({
@@ -92,6 +100,7 @@ export default function CreateQuoteForm({ customers, inventoryItems }: { custome
       }))
     )
 
+    success('Quote created successfully')
     router.push(`/quotes/${quote.id}`)
   }
 

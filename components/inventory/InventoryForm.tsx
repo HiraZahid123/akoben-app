@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useToast } from '@/components/ui/ToastProvider'
 import type { InventoryCategory, InventoryItem } from '@/types/database'
 
 interface Props {
@@ -15,6 +16,7 @@ const CONDITIONS = ['excellent', 'good', 'fair', 'maintenance', 'retired'] as co
 
 export default function InventoryForm({ categories, item, mode }: Props) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -73,8 +75,10 @@ export default function InventoryForm({ categories, item, mode }: Props) {
 
     if (err) {
       setError(err.message)
+      toastError(err.message)
       setSaving(false)
     } else {
+      success(mode === 'create' ? 'Item added to inventory' : 'Item updated successfully')
       router.push('/inventory')
       router.refresh()
     }

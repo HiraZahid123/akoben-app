@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { invoiceEmailHtml } from '@/lib/email-client'
+import { useToast } from '@/components/ui/ToastProvider'
 import type { InvoiceStatus } from '@/types/database'
 
 interface Props {
@@ -19,12 +20,12 @@ interface Props {
 
 export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerName, total, dueDate }: Props) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState('')
 
   async function sendInvoiceEmail() {
-    if (!customerEmail) { setMsg('No email on file'); return }
-    setLoading(true); setMsg('')
+    if (!customerEmail) { toastError('No email on file for this customer'); return }
+    setLoading(true)
     try {
       const res = await fetch('/api/send-email', {
         method: 'POST',
@@ -37,10 +38,10 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
       })
       if (res.ok) {
         await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoiceId)
-        setMsg('Invoice sent!')
+        success(`Invoice emailed to ${customerEmail}`)
         router.refresh()
       } else {
-        setMsg('Failed to send')
+        toastError('Failed to send invoice email')
       }
     } finally { setLoading(false) }
   }
@@ -49,13 +50,13 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
     if (!confirm('Mark this invoice as void?')) return
     setLoading(true)
     await supabase.from('invoices').update({ status: 'void' }).eq('id', invoiceId)
+    success('Invoice marked as void')
     router.refresh()
     setLoading(false)
   }
 
   return (
     <div className="flex items-center gap-2">
-      {msg && <span className="text-xs text-gray-500">{msg}</span>}
       {currentStatus !== 'paid' && currentStatus !== 'void' && (
         <>
           <button onClick={sendInvoiceEmail} disabled={loading}
