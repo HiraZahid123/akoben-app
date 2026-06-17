@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+﻿import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { formatGHS } from '@/lib/utils'
 
 export default async function DashboardPage() {

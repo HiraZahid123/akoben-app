@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
 import { formatGHS, formatDate, formatDateTime, PAYMENT_METHOD_LABELS } from '@/lib/utils'

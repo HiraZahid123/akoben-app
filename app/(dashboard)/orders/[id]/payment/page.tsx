@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import RecordPaymentForm from './RecordPaymentForm'
 import { notFound } from 'next/navigation'
