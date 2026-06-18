@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { GHANA_REGIONS } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -12,6 +12,9 @@ export default function SettingsForm({ settings }: { settings: any }) {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [logoPreview, setLogoPreview] = useState<string | null>(settings?.logo_url ?? null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     business_name: settings?.business_name ?? '',
     email: settings?.email ?? '',
@@ -33,19 +36,38 @@ export default function SettingsForm({ settings }: { settings: any }) {
     setSaved(false)
   }
 
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  async function uploadLogo(): Promise<string | null> {
+    if (!logoFile) return settings?.logo_url ?? null
+    const ext = logoFile.name.split('.').pop()
+    const path = `logos/logo.${ext}`
+    const { error: upErr } = await supabase.storage.from('business-assets').upload(path, logoFile, { upsert: true })
+    if (upErr) { toastError('Logo upload failed: ' + upErr.message); return null }
+    const { data } = supabase.storage.from('business-assets').getPublicUrl(path)
+    return data.publicUrl
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
     try {
-      const payload = {
+      const logoUrl = await uploadLogo()
+      const payload: any = {
         ...form,
         default_tax_rate: parseFloat(form.default_tax_rate),
         default_deposit_pct: parseFloat(form.default_deposit_pct),
         default_rental_days: parseInt(form.default_rental_days),
         overdue_grace_hours: parseInt(form.overdue_grace_hours),
       }
+      if (logoUrl) payload.logo_url = logoUrl
 
       let err
       if (settings?.id) {
@@ -166,6 +188,35 @@ export default function SettingsForm({ settings }: { settings: any }) {
               onChange={e => set('overdue_grace_hours', e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
+        </div>
+      </div>
+
+      {/* Logo */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <h2 className="font-semibold text-gray-900">Business Logo</h2>
+        <div className="flex items-start gap-4">
+          <div
+            onClick={() => logoInputRef.current?.click()}
+            className="w-28 h-20 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors overflow-hidden shrink-0"
+          >
+            {logoPreview ? (
+              <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-1" />
+            ) : (
+              <div className="text-center text-gray-400">
+                <div className="text-xl mb-1">🏢</div>
+                <div className="text-xs">Upload logo</div>
+              </div>
+            )}
+          </div>
+          <div className="text-sm text-gray-500 space-y-1 pt-1">
+            <p>Your logo appears on invoices, quotes, and emails.</p>
+            <p className="text-xs text-gray-400">PNG or SVG recommended · Max 2MB</p>
+            {logoPreview && (
+              <button type="button" onClick={() => { setLogoPreview(null); setLogoFile(null) }}
+                className="text-xs text-red-500 hover:text-red-700">Remove logo</button>
+            )}
+          </div>
+          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
         </div>
       </div>
 

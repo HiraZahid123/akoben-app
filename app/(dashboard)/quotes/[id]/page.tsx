@@ -32,6 +32,10 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             <Badge variant={STATUS_VARIANTS[quote.status as QuoteStatus]} className="capitalize text-sm px-3 py-1">
               {quote.status}
             </Badge>
+            <a href={`/quotes/${quote.id}/edit`}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              Edit
+            </a>
             <QuoteActions
               quoteId={quote.id}
               quoteNumber={quote.quote_number}

@@ -79,6 +79,7 @@ export interface InventoryItem {
   setup_time_min: number
   notes: string | null
   image_url: string | null
+  location: string | null
   is_active: boolean
 }
 

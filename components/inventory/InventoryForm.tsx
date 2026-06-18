@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
@@ -19,6 +19,9 @@ export default function InventoryForm({ categories, item, mode }: Props) {
   const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [imagePreview, setImagePreview] = useState<string | null>((item as any)?.image_url ?? null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     name:             item?.name ?? '',
@@ -35,7 +38,25 @@ export default function InventoryForm({ categories, item, mode }: Props) {
     dimensions:       item?.dimensions ?? '',
     setup_time_min:   item?.setup_time_min?.toString() ?? '0',
     notes:            item?.notes ?? '',
+    location:         (item as any)?.location ?? '',
   })
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  async function uploadImage(itemId: string): Promise<string | null> {
+    if (!imageFile) return (item as any)?.image_url ?? null
+    const ext = imageFile.name.split('.').pop()
+    const path = `inventory/${itemId}.${ext}`
+    const { error: upErr } = await supabase.storage.from('inventory-images').upload(path, imageFile, { upsert: true })
+    if (upErr) { toastError('Image upload failed: ' + upErr.message); return null }
+    const { data } = supabase.storage.from('inventory-images').getPublicUrl(path)
+    return data.publicUrl
+  }
 
   function set(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -46,7 +67,9 @@ export default function InventoryForm({ categories, item, mode }: Props) {
     setSaving(true)
     setError('')
 
-    const payload = {
+    let itemId = item?.id ?? ''
+
+    const basePayload = {
       name:             form.name,
       sku:              form.sku || null,
       description:      form.description || null,
@@ -62,15 +85,24 @@ export default function InventoryForm({ categories, item, mode }: Props) {
       dimensions:       form.dimensions || null,
       setup_time_min:   parseInt(form.setup_time_min) || 0,
       notes:            form.notes || null,
+      location:         form.location || null,
     }
 
     let err
     if (mode === 'create') {
-      const res = await supabase.from('inventory_items').insert(payload)
+      const res = await supabase.from('inventory_items').insert(basePayload).select('id').single()
       err = res.error
+      if (!err && res.data) itemId = res.data.id
     } else {
-      const res = await supabase.from('inventory_items').update(payload).eq('id', item!.id!)
+      const res = await supabase.from('inventory_items').update(basePayload).eq('id', item!.id!)
       err = res.error
+    }
+
+    if (!err && itemId) {
+      const imageUrl = await uploadImage(itemId)
+      if (imageUrl) {
+        await supabase.from('inventory_items').update({ image_url: imageUrl }).eq('id', itemId)
+      }
     }
 
     if (err) {
@@ -91,6 +123,46 @@ export default function InventoryForm({ categories, item, mode }: Props) {
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        {/* Image upload */}
+        <div className="p-6 space-y-3">
+          <h2 className="font-semibold text-gray-800">Item Photo</h2>
+          <div className="flex items-start gap-4">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="w-28 h-28 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors overflow-hidden shrink-0"
+            >
+              {imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-center text-gray-400">
+                  <div className="text-2xl mb-1">📷</div>
+                  <div className="text-xs">Click to upload</div>
+                </div>
+              )}
+            </div>
+            <div className="text-sm text-gray-500 space-y-1 pt-1">
+              <p>Upload a photo of this item.</p>
+              <p className="text-xs text-gray-400">Supported: JPG, PNG, WEBP · Max 5MB</p>
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={() => { setImagePreview(null); setImageFile(null) }}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  Remove photo
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+          </div>
+        </div>
+
         {/* Basic info */}
         <div className="p-6 space-y-4">
           <h2 className="font-semibold text-gray-800">Basic Information</h2>
@@ -269,6 +341,15 @@ export default function InventoryForm({ categories, item, mode }: Props) {
                 value={form.setup_time_min}
                 onChange={e => set('setup_time_min', e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
+              <input
+                value={form.location}
+                onChange={e => set('location', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder='e.g. Shelf A3, Warehouse 2, Rack B'
               />
             </div>
             <div>

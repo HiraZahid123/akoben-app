@@ -70,6 +70,7 @@ export default function InventoryTable({ items, categories }: Props) {
             <tr className="border-b border-gray-100 bg-gray-50 text-left">
               <th className="px-4 py-3 font-medium text-gray-600">Item</th>
               <th className="px-4 py-3 font-medium text-gray-600">Category</th>
+              <th className="px-4 py-3 font-medium text-gray-600">Location</th>
               <th className="px-4 py-3 font-medium text-gray-600 text-right">Daily Rate</th>
               <th className="px-4 py-3 font-medium text-gray-600 text-center">Stock</th>
               <th className="px-4 py-3 font-medium text-gray-600 text-center">Available</th>
@@ -80,7 +81,7 @@ export default function InventoryTable({ items, categories }: Props) {
           <tbody className="divide-y divide-gray-50">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
                   No items found
                 </td>
               </tr>
@@ -88,10 +89,20 @@ export default function InventoryTable({ items, categories }: Props) {
               filtered.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{item.name}</div>
-                    {item.sku && <div className="text-xs text-gray-400 mt-0.5">{item.sku}</div>}
+                    <div className="flex items-center gap-3">
+                      {(item as any).image_url ? (
+                        <img src={(item as any).image_url} alt={item.name} className="w-9 h-9 rounded-lg object-cover shrink-0 border border-gray-100" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 shrink-0 text-sm">📦</div>
+                      )}
+                      <div>
+                        <div className="font-medium text-gray-900">{item.name}</div>
+                        {item.sku && <div className="text-xs text-gray-400 mt-0.5">{item.sku}</div>}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-gray-500">{item.category_name ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 text-sm">{(item as any).location ?? <span className="text-gray-300">—</span>}</td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">
                     {formatGHS(item.rate_daily)}
                   </td>

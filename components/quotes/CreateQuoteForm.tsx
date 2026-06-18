@@ -12,25 +12,51 @@ interface LineItem { item_id: string; name: string; quantity: number; unit_rate:
 
 const EVENT_TYPES = ['wedding','traditional_wedding','outdooring','naming_ceremony','funeral','corporate','birthday','graduation','fundraiser','religious','festival','other']
 
-export default function CreateQuoteForm({ customers, inventoryItems }: { customers: CustomerOption[]; inventoryItems: ItemOption[] }) {
+interface InitialQuoteData {
+  id: string
+  customer_id: string
+  event_name: string
+  event_type: string
+  event_date: string | null
+  pickup_date: string | null
+  return_date: string | null
+  expires_at: string | null
+  delivery_method: string
+  venue_address: string | null
+  delivery_fee: number
+  discount_pct: number
+  notes: string | null
+  quote_items: { item_id: string; quantity: number; unit_rate: number; rental_days: number; inventory_items: { name: string } | null }[]
+}
+
+export default function CreateQuoteForm({ customers, inventoryItems, initialData }: { customers: CustomerOption[]; inventoryItems: ItemOption[]; initialData?: InitialQuoteData }) {
+  const editMode = !!initialData
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const [customerId, setCustomerId] = useState('')
-  const [eventName, setEventName] = useState('')
-  const [eventType, setEventType] = useState('other')
-  const [eventDate, setEventDate] = useState('')
-  const [pickupDate, setPickupDate] = useState('')
-  const [returnDate, setReturnDate] = useState('')
-  const [expiresAt, setExpiresAt] = useState('')
-  const [deliveryMethod, setDeliveryMethod] = useState('customer_pickup')
-  const [venueAddress, setVenueAddress] = useState('')
-  const [deliveryFee, setDeliveryFee] = useState('0')
-  const [discountPct, setDiscountPct] = useState('0')
-  const [notes, setNotes] = useState('')
-  const [lineItems, setLineItems] = useState<LineItem[]>([])
+  const [customerId, setCustomerId] = useState(initialData?.customer_id ?? '')
+  const [eventName, setEventName] = useState(initialData?.event_name ?? '')
+  const [eventType, setEventType] = useState(initialData?.event_type ?? 'other')
+  const [eventDate, setEventDate] = useState(initialData?.event_date ?? '')
+  const [pickupDate, setPickupDate] = useState(initialData?.pickup_date?.slice(0, 16) ?? '')
+  const [returnDate, setReturnDate] = useState(initialData?.return_date?.slice(0, 16) ?? '')
+  const [expiresAt, setExpiresAt] = useState(initialData?.expires_at?.slice(0, 10) ?? '')
+  const [deliveryMethod, setDeliveryMethod] = useState(initialData?.delivery_method ?? 'customer_pickup')
+  const [venueAddress, setVenueAddress] = useState(initialData?.venue_address ?? '')
+  const [deliveryFee, setDeliveryFee] = useState(String(initialData?.delivery_fee ?? '0'))
+  const [discountPct, setDiscountPct] = useState(String(initialData?.discount_pct ?? '0'))
+  const [notes, setNotes] = useState(initialData?.notes ?? '')
+  const [lineItems, setLineItems] = useState<LineItem[]>(
+    initialData?.quote_items?.map(qi => ({
+      item_id: qi.item_id,
+      name: (qi.inventory_items as any)?.name ?? qi.item_id,
+      quantity: qi.quantity,
+      unit_rate: qi.unit_rate,
+      rental_days: qi.rental_days,
+    })) ?? []
+  )
   const [itemSearch, setItemSearch] = useState('')
 
   const rentalDays = useMemo(() => {
@@ -66,7 +92,7 @@ export default function CreateQuoteForm({ customers, inventoryItems }: { custome
     if (!customerId || lineItems.length === 0) { setError('Select a customer and add at least one item'); return }
     setSaving(true); setError('')
 
-    const { data: quote, error: qErr } = await supabase.from('quotes').insert({
+    const quotePayload = {
       customer_id:     customerId,
       event_name:      eventName,
       event_type:      eventType as any,
@@ -80,28 +106,30 @@ export default function CreateQuoteForm({ customers, inventoryItems }: { custome
       discount_pct:    parseFloat(discountPct) || 0,
       tax_rate:        GHANA_VAT_RATE,
       notes:           notes || null,
-      status:          'draft',
-      quote_number:    '',
-    }).select().single()
+    }
 
-    if (qErr || !quote) {
-      const msg = qErr?.message ?? 'Failed to create quote'
-      setError(msg)
-      toastError(msg)
-      setSaving(false)
-      return
+    let quoteId: string
+    if (editMode) {
+      const { error: qErr } = await supabase.from('quotes').update(quotePayload).eq('id', initialData!.id)
+      if (qErr) { setError(qErr.message); toastError(qErr.message); setSaving(false); return }
+      quoteId = initialData!.id
+      await supabase.from('quote_items').delete().eq('quote_id', quoteId)
+    } else {
+      const { data: quote, error: qErr } = await supabase.from('quotes').insert({ ...quotePayload, status: 'draft', quote_number: '' }).select().single()
+      if (qErr || !quote) { const msg = qErr?.message ?? 'Failed to create quote'; setError(msg); toastError(msg); setSaving(false); return }
+      quoteId = quote.id
     }
 
     await supabase.from('quote_items').insert(
       lineItems.map(li => ({
-        quote_id: quote.id, item_id: li.item_id,
+        quote_id: quoteId, item_id: li.item_id,
         quantity: li.quantity, unit_rate: li.unit_rate,
         rental_days: li.rental_days, line_total: li.unit_rate * li.quantity * li.rental_days,
       }))
     )
 
-    success('Quote created successfully')
-    router.push(`/quotes/${quote.id}`)
+    success(editMode ? 'Quote updated successfully' : 'Quote created successfully')
+    router.push(`/quotes/${quoteId}`)
   }
 
   return (
@@ -257,7 +285,7 @@ export default function CreateQuoteForm({ customers, inventoryItems }: { custome
             </div>
             <button type="submit" disabled={saving || lineItems.length === 0}
               className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-              {saving ? 'Saving...' : 'Create Quote'}
+              {saving ? 'Saving...' : editMode ? 'Save Changes' : 'Create Quote'}
             </button>
             <button type="button" onClick={() => router.back()}
               className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors">

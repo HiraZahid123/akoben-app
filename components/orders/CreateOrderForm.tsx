@@ -22,31 +22,60 @@ const DELIVERY_METHODS = [
   { value: 'delivery_setup',  label: 'Delivery + Setup' },
 ]
 
-export default function CreateOrderForm({ customers, inventoryItems }: { customers: CustomerOption[]; inventoryItems: ItemOption[] }) {
+interface InitialOrderData {
+  id: string
+  customer_id: string
+  event_name: string
+  event_type: string
+  event_date: string | null
+  pickup_date: string | null
+  return_date: string | null
+  delivery_method: string
+  venue_name: string | null
+  venue_address: string | null
+  venue_region: string | null
+  delivery_fee: number
+  setup_fee: number
+  discount_pct: number
+  internal_notes: string | null
+  customer_notes: string | null
+  order_items: { item_id: string; quantity: number; unit_rate: number; rental_days: number; inventory_items: { name: string } | null }[]
+}
+
+export default function CreateOrderForm({ customers, inventoryItems, initialData }: { customers: CustomerOption[]; inventoryItems: ItemOption[]; initialData?: InitialOrderData }) {
+  const editMode = !!initialData
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   // Form fields
-  const [customerId, setCustomerId] = useState('')
-  const [eventName, setEventName] = useState('')
-  const [eventType, setEventType] = useState('other')
-  const [eventDate, setEventDate] = useState('')
-  const [pickupDate, setPickupDate] = useState('')
-  const [returnDate, setReturnDate] = useState('')
-  const [deliveryMethod, setDeliveryMethod] = useState('customer_pickup')
-  const [venueName, setVenueName] = useState('')
-  const [venueAddress, setVenueAddress] = useState('')
-  const [venueRegion, setVenueRegion] = useState('')
-  const [deliveryFee, setDeliveryFee] = useState('0')
-  const [setupFee, setSetupFee] = useState('0')
-  const [discountPct, setDiscountPct] = useState('0')
-  const [internalNotes, setInternalNotes] = useState('')
-  const [customerNotes, setCustomerNotes] = useState('')
+  const [customerId, setCustomerId] = useState(initialData?.customer_id ?? '')
+  const [eventName, setEventName] = useState(initialData?.event_name ?? '')
+  const [eventType, setEventType] = useState(initialData?.event_type ?? 'other')
+  const [eventDate, setEventDate] = useState(initialData?.event_date ?? '')
+  const [pickupDate, setPickupDate] = useState(initialData?.pickup_date?.slice(0, 16) ?? '')
+  const [returnDate, setReturnDate] = useState(initialData?.return_date?.slice(0, 16) ?? '')
+  const [deliveryMethod, setDeliveryMethod] = useState(initialData?.delivery_method ?? 'customer_pickup')
+  const [venueName, setVenueName] = useState(initialData?.venue_name ?? '')
+  const [venueAddress, setVenueAddress] = useState(initialData?.venue_address ?? '')
+  const [venueRegion, setVenueRegion] = useState(initialData?.venue_region ?? '')
+  const [deliveryFee, setDeliveryFee] = useState(String(initialData?.delivery_fee ?? '0'))
+  const [setupFee, setSetupFee] = useState(String(initialData?.setup_fee ?? '0'))
+  const [discountPct, setDiscountPct] = useState(String(initialData?.discount_pct ?? '0'))
+  const [internalNotes, setInternalNotes] = useState(initialData?.internal_notes ?? '')
+  const [customerNotes, setCustomerNotes] = useState(initialData?.customer_notes ?? '')
 
   // Line items
-  const [lineItems, setLineItems] = useState<LineItem[]>([])
+  const [lineItems, setLineItems] = useState<LineItem[]>(
+    initialData?.order_items?.map(oi => ({
+      item_id: oi.item_id,
+      name: (oi.inventory_items as any)?.name ?? oi.item_id,
+      quantity: oi.quantity,
+      unit_rate: oi.unit_rate,
+      rental_days: oi.rental_days,
+    })) ?? []
+  )
   const [itemSearch, setItemSearch] = useState('')
 
   const selectedCustomer = customers.find(c => c.id === customerId)
@@ -103,59 +132,49 @@ export default function CreateOrderForm({ customers, inventoryItems }: { custome
     setSaving(true)
     setError('')
 
-    const { data: order, error: oErr } = await supabase
-      .from('orders')
-      .insert({
-        customer_id:    customerId,
-        event_name:     eventName,
-        event_type:     eventType as any,
-        event_date:     eventDate || null,
-        pickup_date:    pickupDate,
-        return_date:    returnDate,
-        delivery_method: deliveryMethod as any,
-        venue_name:     venueName || null,
-        venue_address:  venueAddress || null,
-        venue_region:   (venueRegion as any) || null,
-        delivery_fee:   dFee,
-        setup_fee:      sFee,
-        tax_rate:       GHANA_VAT_RATE,
-        discount_pct:   parseFloat(discountPct) || 0,
-        deposit_required: depositRequired,
-        internal_notes: internalNotes || null,
-        customer_notes: customerNotes || null,
-        status:         'confirmed',
-        order_number:   '',
-      })
-      .select()
-      .single()
-
-    if (oErr || !order) {
-      const msg = oErr?.message ?? 'Failed to create order'
-      setError(msg)
-      toastError(msg)
-      setSaving(false)
-      return
+    const orderPayload = {
+      customer_id:     customerId,
+      event_name:      eventName,
+      event_type:      eventType as any,
+      event_date:      eventDate || null,
+      pickup_date:     pickupDate,
+      return_date:     returnDate,
+      delivery_method: deliveryMethod as any,
+      venue_name:      venueName || null,
+      venue_address:   venueAddress || null,
+      venue_region:    (venueRegion as any) || null,
+      delivery_fee:    dFee,
+      setup_fee:       sFee,
+      tax_rate:        GHANA_VAT_RATE,
+      discount_pct:    parseFloat(discountPct) || 0,
+      deposit_required: depositRequired,
+      internal_notes:  internalNotes || null,
+      customer_notes:  customerNotes || null,
     }
 
-    const orderItemsPayload = lineItems.map(li => ({
-      order_id:    order.id,
-      item_id:     li.item_id,
-      quantity:    li.quantity,
-      unit_rate:   li.unit_rate,
-      rental_days: li.rental_days,
-      line_total:  li.unit_rate * li.quantity * li.rental_days,
-    }))
-
-    const { error: itemsErr } = await supabase.from('order_items').insert(orderItemsPayload)
-    if (itemsErr) {
-      setError(itemsErr.message)
-      toastError(itemsErr.message)
-      setSaving(false)
-      return
+    let orderId: string
+    if (editMode) {
+      const { error: oErr } = await supabase.from('orders').update(orderPayload).eq('id', initialData!.id)
+      if (oErr) { setError(oErr.message); toastError(oErr.message); setSaving(false); return }
+      orderId = initialData!.id
+      await supabase.from('order_items').delete().eq('order_id', orderId)
+    } else {
+      const { data: order, error: oErr } = await supabase.from('orders').insert({ ...orderPayload, status: 'confirmed', order_number: '' }).select().single()
+      if (oErr || !order) { const msg = oErr?.message ?? 'Failed to create order'; setError(msg); toastError(msg); setSaving(false); return }
+      orderId = order.id
     }
 
-    success('Order created successfully')
-    router.push(`/orders/${order.id}`)
+    const { error: itemsErr } = await supabase.from('order_items').insert(
+      lineItems.map(li => ({
+        order_id: orderId, item_id: li.item_id,
+        quantity: li.quantity, unit_rate: li.unit_rate,
+        rental_days: li.rental_days, line_total: li.unit_rate * li.quantity * li.rental_days,
+      }))
+    )
+    if (itemsErr) { setError(itemsErr.message); toastError(itemsErr.message); setSaving(false); return }
+
+    success(editMode ? 'Order updated successfully' : 'Order created successfully')
+    router.push(`/orders/${orderId}`)
   }
 
   return (
@@ -421,7 +440,7 @@ export default function CreateOrderForm({ customers, inventoryItems }: { custome
 
             <button type="submit" disabled={saving || lineItems.length === 0}
               className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2">
-              {saving ? 'Creating Order...' : 'Create Order'}
+              {saving ? 'Saving...' : editMode ? 'Save Changes' : 'Create Order'}
             </button>
             <button type="button" onClick={() => router.back()}
               className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors">
