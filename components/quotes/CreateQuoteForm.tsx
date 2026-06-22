@@ -272,7 +272,7 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
                 <div className="flex justify-between text-green-600"><span>Discount ({discountPct}%)</span><span>−{formatGHS(discountAmount)}</span></div>
               )}
               {dFee > 0 && <div className="flex justify-between text-gray-600"><span>Delivery</span><span>{formatGHS(dFee)}</span></div>}
-              <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(taxAmount)}</span></div>
+              {taxAmount > 0 && <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(taxAmount)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(total)}</span>
               </div>

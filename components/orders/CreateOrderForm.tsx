@@ -415,10 +415,12 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
                   <span>{formatGHS(sFee)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-gray-600">
-                <span>VAT (15%)</span>
-                <span>{formatGHS(taxAmount)}</span>
-              </div>
+              {taxAmount > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>VAT (15%)</span>
+                  <span>{formatGHS(taxAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-100">
                 <span>Total</span>
                 <span>{formatGHS(total)}</span>

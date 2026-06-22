@@ -120,7 +120,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {order.delivery_fee > 0 && (
                 <div className="flex justify-between text-gray-600"><span>Delivery</span><span>{formatGHS(order.delivery_fee)}</span></div>
               )}
-              <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(order.tax_amount)}</span></div>
+              {order.tax_amount > 0 && <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(order.tax_amount)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(order.total)}</span>
               </div>

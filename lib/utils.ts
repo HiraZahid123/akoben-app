@@ -22,7 +22,7 @@ export function formatGhanaPhone(phone: string | null | undefined): string {
 }
 
 // Ghana VAT calculation (15%)
-export const GHANA_VAT_RATE = 15
+export const GHANA_VAT_RATE = 0
 
 export function calculateVAT(subtotal: number, vatRate = GHANA_VAT_RATE): number {
   return Math.round((subtotal * vatRate / 100) * 100) / 100

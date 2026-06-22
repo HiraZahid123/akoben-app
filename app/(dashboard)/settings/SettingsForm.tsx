@@ -23,7 +23,8 @@ export default function SettingsForm({ settings }: { settings: any }) {
     city: settings?.city ?? '',
     region: settings?.region ?? 'Central',
     gps_address: settings?.gps_address ?? '',
-    default_tax_rate: String(settings?.default_tax_rate ?? 15),
+    default_tax_rate: String(settings?.default_tax_rate ?? 0),
+    vat_enabled: String(settings?.default_tax_rate > 0 ? 'true' : 'false'),
     default_deposit_pct: String(settings?.default_deposit_pct ?? 30),
     default_rental_days: String(settings?.default_rental_days ?? 1),
     overdue_grace_hours: String(settings?.overdue_grace_hours ?? 2),
@@ -60,8 +61,9 @@ export default function SettingsForm({ settings }: { settings: any }) {
 
     try {
       const logoUrl = await uploadLogo()
+      const { vat_enabled, ...formWithoutToggle } = form
       const payload: any = {
-        ...form,
+        ...formWithoutToggle,
         default_tax_rate: parseFloat(form.default_tax_rate),
         default_deposit_pct: parseFloat(form.default_deposit_pct),
         default_rental_days: parseInt(form.default_rental_days),
@@ -161,11 +163,22 @@ export default function SettingsForm({ settings }: { settings: any }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">VAT Rate (%)</label>
-            <input type="number" step="0.01" min="0" max="100" value={form.default_tax_rate}
-              onChange={e => set('default_tax_rate', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <p className="text-xs text-gray-400 mt-1">Ghana VAT is 15%</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Charge VAT (15%)</label>
+            <div className="flex items-center gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const enabling = form.vat_enabled !== 'true'
+                  set('vat_enabled', enabling ? 'true' : 'false')
+                  set('default_tax_rate', enabling ? '15' : '0')
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.vat_enabled === 'true' ? 'bg-blue-600' : 'bg-gray-200'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.vat_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm text-gray-600">{form.vat_enabled === 'true' ? 'VAT enabled (15%)' : 'VAT disabled'}</span>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Only charge VAT if annual revenue exceeds GHS 760,000</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Deposit Required (%)</label>

@@ -84,7 +84,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <div className="px-5 py-4 border-t border-gray-100 space-y-2">
               <div className="flex justify-between text-sm text-gray-600"><span>Subtotal</span><span>{formatGHS(invoice.subtotal)}</span></div>
               {invoice.delivery_fee > 0 && <div className="flex justify-between text-sm text-gray-600"><span>Delivery</span><span>{formatGHS(invoice.delivery_fee)}</span></div>}
-              <div className="flex justify-between text-sm text-gray-600"><span>VAT (15%)</span><span>{formatGHS(invoice.tax_amount)}</span></div>
+              {invoice.tax_amount > 0 && <div className="flex justify-between text-sm text-gray-600"><span>VAT (15%)</span><span>{formatGHS(invoice.tax_amount)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-200">
                 <span>Total</span><span>{formatGHS(invoice.total)}</span>
               </div>

@@ -87,9 +87,34 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
           rental_days: qi.rental_days, line_total: qi.line_total,
         }))
       )
+
+      // Auto-generate invoice
+      const subtotal = qItems.reduce((s, qi) => s + (qi.line_total ?? 0), 0)
+      const discountAmount = Math.round(subtotal * (quote.discount_pct ?? 0) / 100 * 100) / 100
+      const deliveryFee = quote.delivery_fee ?? 0
+      const taxable = subtotal - discountAmount + deliveryFee
+      const taxAmount = Math.round(taxable * (quote.tax_rate ?? 0) / 100 * 100) / 100
+      const totalAmount = taxable + taxAmount
+      const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+
+      const { data: invoice } = await supabase.from('invoices').insert({
+        order_id: order.id,
+        customer_id: quote.customer_id,
+        due_date: dueDate,
+        subtotal,
+        discount_amount: discountAmount,
+        delivery_fee: deliveryFee,
+        tax_amount: taxAmount,
+        total_amount: totalAmount,
+        amount_paid: 0,
+        balance_due: totalAmount,
+        status: 'draft',
+        invoice_number: '',
+      }).select().single()
+
       await supabase.from('quotes').update({ status: 'accepted', converted_to_order: order.id }).eq('id', quoteId)
-      success('Quote converted to order')
-      router.push(`/orders/${order.id}`)
+      success('Quote converted to order — invoice created')
+      router.push(invoice ? `/invoices/${invoice.id}` : `/orders/${order.id}`)
     } else {
       toastError('Failed to convert quote to order')
     }
