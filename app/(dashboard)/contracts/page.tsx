@@ -2,11 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
 import { formatDate } from '@/lib/utils'
-import { getCurrentUserRole } from '@/lib/auth-role'
-import { redirect } from 'next/navigation'
-
 export default async function ContractsPage() {
-  if (await getCurrentUserRole() !== 'admin') redirect('/dashboard')
   const supabase = await createServerSupabaseClient()
 
   const { data: orders } = await supabase

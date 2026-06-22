@@ -1,11 +1,7 @@
 ﻿import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import CRMTable from './CRMTable'
-import { getCurrentUserRole } from '@/lib/auth-role'
-import { redirect } from 'next/navigation'
-
 export default async function CRMPage() {
-  if (await getCurrentUserRole() !== 'admin') redirect('/dashboard')
   const supabase = await createServerSupabaseClient()
 
   const { data: logs } = await supabase

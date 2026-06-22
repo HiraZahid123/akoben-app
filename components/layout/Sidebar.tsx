@@ -10,10 +10,10 @@ const allNavItems = [
   { href: '/inventory',  label: 'Inventory',   icon: '📦', roles: ['admin', 'staff'] },
   { href: '/customers',  label: 'Customers',   icon: '👥', roles: ['admin', 'staff'] },
   { href: '/scanner',    label: 'Scanner',     icon: '📷', roles: ['admin', 'staff'] },
-  { href: '/quotes',     label: 'Quotes',      icon: '💬', roles: ['admin'] },
-  { href: '/invoices',   label: 'Invoices',    icon: '🧾', roles: ['admin'] },
-  { href: '/contracts',  label: 'Contracts',   icon: '📝', roles: ['admin'] },
-  { href: '/crm',        label: 'CRM',         icon: '📞', roles: ['admin'] },
+  { href: '/quotes',     label: 'Quotes',      icon: '💬', roles: ['admin', 'staff'] },
+  { href: '/invoices',   label: 'Invoices',    icon: '🧾', roles: ['admin', 'staff'] },
+  { href: '/contracts',  label: 'Contracts',   icon: '📝', roles: ['admin', 'staff'] },
+  { href: '/crm',        label: 'CRM',         icon: '📞', roles: ['admin', 'staff'] },
   { href: '/settings',   label: 'Settings',    icon: '⚙️',  roles: ['admin'] },
 ]
 
