@@ -39,9 +39,10 @@ export default function OrderActions({ orderId, currentStatus }: { orderId: stri
       setLoading(false)
       return
     }
-    const { data: order } = await supabase.from('orders_with_customer').select('*').eq('id', orderId).single()
+    const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).single()
     if (!order) { error('Could not load order'); setLoading(false); return }
     const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+    const total = (order as any).total ?? 0
     const { data: inv, error: invErr } = await supabase.from('invoices').insert({
       order_id: orderId,
       customer_id: (order as any).customer_id,
@@ -49,9 +50,9 @@ export default function OrderActions({ orderId, currentStatus }: { orderId: stri
       subtotal: (order as any).subtotal ?? 0,
       discount_amount: (order as any).discount_amount ?? 0,
       tax_amount: (order as any).tax_amount ?? 0,
-      total_amount: (order as any).total ?? 0,
-      amount_paid: (order as any).amount_paid ?? 0,
-      balance_due: (order as any).balance_due ?? 0,
+      total_amount: total,
+      amount_paid: 0,
+      balance_due: total,
       status: 'draft',
       invoice_number: '',
     }).select().single()
