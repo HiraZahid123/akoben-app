@@ -1,8 +1,11 @@
 ﻿import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import InvoicesTable from './InvoicesTable'
+import { getCurrentUserRole } from '@/lib/auth-role'
+import { redirect } from 'next/navigation'
 
 export default async function InvoicesPage() {
+  if (await getCurrentUserRole() !== 'admin') redirect('/dashboard')
   const supabase = await createServerSupabaseClient()
 
   const { data: invoices } = await supabase

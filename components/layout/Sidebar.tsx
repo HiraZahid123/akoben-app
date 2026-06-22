@@ -2,22 +2,24 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { UserRole } from '@/lib/auth-role'
 
-const navItems = [
-  { href: '/dashboard',  label: 'Dashboard',  icon: '📊' },
-  { href: '/orders',     label: 'Orders',      icon: '📋' },
-  { href: '/inventory',  label: 'Inventory',   icon: '📦' },
-  { href: '/customers',  label: 'Customers',   icon: '👥' },
-  { href: '/quotes',     label: 'Quotes',      icon: '💬' },
-  { href: '/invoices',   label: 'Invoices',    icon: '🧾' },
-  { href: '/contracts',  label: 'Contracts',   icon: '📝' },
-  { href: '/scanner',    label: 'Scanner',     icon: '📷' },
-  { href: '/crm',        label: 'CRM',         icon: '📞' },
-  { href: '/settings',   label: 'Settings',    icon: '⚙️' },
+const allNavItems = [
+  { href: '/dashboard',  label: 'Dashboard',  icon: '📊', roles: ['admin', 'staff'] },
+  { href: '/orders',     label: 'Orders',      icon: '📋', roles: ['admin', 'staff'] },
+  { href: '/inventory',  label: 'Inventory',   icon: '📦', roles: ['admin', 'staff'] },
+  { href: '/customers',  label: 'Customers',   icon: '👥', roles: ['admin', 'staff'] },
+  { href: '/scanner',    label: 'Scanner',     icon: '📷', roles: ['admin', 'staff'] },
+  { href: '/quotes',     label: 'Quotes',      icon: '💬', roles: ['admin'] },
+  { href: '/invoices',   label: 'Invoices',    icon: '🧾', roles: ['admin'] },
+  { href: '/contracts',  label: 'Contracts',   icon: '📝', roles: ['admin'] },
+  { href: '/crm',        label: 'CRM',         icon: '📞', roles: ['admin'] },
+  { href: '/settings',   label: 'Settings',    icon: '⚙️',  roles: ['admin'] },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ role = 'staff' }: { role?: UserRole }) {
   const pathname = usePathname()
+  const navItems = allNavItems.filter(item => item.roles.includes(role))
 
   return (
     <aside className="w-60 bg-[#0f172a] text-white flex flex-col shrink-0">
@@ -55,11 +57,14 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="px-5 py-4 border-t border-white/10">
-        <form action="/api/auth/signout" method="post">
-          <button type="submit" className="text-xs text-slate-400 hover:text-white transition-colors">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-slate-500 capitalize">{role}</span>
+          <form action="/api/auth/signout" method="post">
+            <button type="submit" className="text-xs text-slate-400 hover:text-white transition-colors">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </aside>
   )

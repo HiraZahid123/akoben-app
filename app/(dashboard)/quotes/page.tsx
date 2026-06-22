@@ -1,8 +1,11 @@
 ﻿import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import QuotesTable from './QuotesTable'
+import { getCurrentUserRole } from '@/lib/auth-role'
+import { redirect } from 'next/navigation'
 
 export default async function QuotesPage() {
+  if (await getCurrentUserRole() !== 'admin') redirect('/dashboard')
   const supabase = await createServerSupabaseClient()
 
   const { data: quotes } = await supabase
