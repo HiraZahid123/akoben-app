@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Paystack is not configured. Add PAYSTACK_SECRET_KEY to your environment variables.' }, { status: 503 })
   }
 
-  const { invoiceId, orderId, email, amount, customerName, invoiceNumber } = await req.json()
+  const { invoiceId, orderId, customerId, email, amount, customerName, invoiceNumber } = await req.json()
   if (!email || !amount || !orderId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
   await supabase.from('payments').insert({
     order_id: orderId,
     invoice_id: invoiceId ?? null,
+    customer_id: customerId,
     amount,
-    payment_type: 'final',
-    method: 'paystack',
+    payment_type: 'final' as any,
+    method: 'card' as any,
     reference: data.data.reference,
     notes: 'Paystack — awaiting confirmation',
   })

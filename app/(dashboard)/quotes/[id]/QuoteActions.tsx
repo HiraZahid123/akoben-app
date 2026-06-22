@@ -102,13 +102,12 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
         customer_id: quote.customer_id,
         due_date: dueDate,
         subtotal,
-        discount_amount: discountAmount,
         delivery_fee: deliveryFee,
         tax_amount: taxAmount,
-        total_amount: totalAmount,
+        total: totalAmount,
         amount_paid: 0,
         balance_due: totalAmount,
-        status: 'draft',
+        status: 'draft' as any,
         invoice_number: '',
       }).select().single()
 

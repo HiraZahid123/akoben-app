@@ -48,11 +48,12 @@ export default function OrderActions({ orderId, currentStatus }: { orderId: stri
       customer_id: (order as any).customer_id,
       due_date: dueDate,
       subtotal: (order as any).subtotal ?? 0,
+      delivery_fee: (order as any).delivery_fee ?? 0,
       tax_amount: (order as any).tax_amount ?? 0,
       total: total,
       amount_paid: 0,
       balance_due: total,
-      status: 'draft',
+      status: 'draft' as any,
       invoice_number: '',
     }).select().single()
     if (invErr || !inv) { error('Failed to generate invoice'); setLoading(false); return }
