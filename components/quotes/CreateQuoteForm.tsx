@@ -104,7 +104,11 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
       venue_address:   venueAddress || null,
       delivery_fee:    dFee,
       discount_pct:    parseFloat(discountPct) || 0,
+      discount_amount: discountAmount,
+      subtotal:        subtotal,
       tax_rate:        GHANA_VAT_RATE,
+      tax_amount:      taxAmount,
+      total:           total,
       notes:           notes || null,
     }
 
