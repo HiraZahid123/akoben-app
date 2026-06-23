@@ -18,11 +18,26 @@ const STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
   returned: 'Order marked as returned',
 }
 
-export default function OrderActions({ orderId, currentStatus }: { orderId: string; currentStatus: OrderStatus }) {
+export default function OrderActions({ orderId, currentStatus, orderNumber, customerName, customerPhone, eventName, total }: {
+  orderId: string
+  currentStatus: OrderStatus
+  orderNumber?: string
+  customerName?: string
+  customerPhone?: string | null
+  eventName?: string
+  total?: number
+}) {
   const router = useRouter()
   const { success, error } = useToast()
   const [loading, setLoading] = useState(false)
   const transitions = TRANSITIONS[currentStatus] ?? []
+
+  function sendWhatsApp() {
+    if (!customerPhone) { error('No phone number on file for this customer'); return }
+    const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
+    const msg = `Hello ${customerName}, your order *${orderNumber}* has been confirmed with Akoben Event Rentals.\n\nEvent: ${eventName}\nTotal: GHS ${(total ?? 0).toFixed(2)}\n\nThank you for booking with us!`
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  }
 
   async function changeStatus(next: OrderStatus) {
     setLoading(true)
@@ -81,6 +96,12 @@ export default function OrderActions({ orderId, currentStatus }: { orderId: stri
         className="px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
         📄 Contract
       </a>
+      {customerPhone && (
+        <button onClick={sendWhatsApp}
+          className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
+          💬 WhatsApp
+        </button>
+      )}
     </div>
   )
 }

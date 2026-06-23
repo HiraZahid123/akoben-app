@@ -33,7 +33,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <Badge variant={STATUS_VARIANTS[order.status as OrderStatus]} className="capitalize text-sm px-3 py-1">
               {order.status}
             </Badge>
-            <OrderActions orderId={order.id} currentStatus={order.status as OrderStatus} />
+            <OrderActions
+              orderId={order.id}
+              currentStatus={order.status as OrderStatus}
+              orderNumber={order.order_number}
+              customerName={order.customer_name}
+              customerPhone={(order as any).customer_phone}
+              eventName={order.event_name}
+              total={(order as any).total}
+            />
           </div>
         }
       />

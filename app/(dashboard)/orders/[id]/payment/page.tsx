@@ -25,8 +25,10 @@ export default async function RecordPaymentPage({ params }: { params: Promise<{ 
           orderId={id}
           invoiceId={invoice?.id ?? null}
           customerId={order.customer_id}
-          balanceDue={order.balance_due}
+          balanceDue={(order as any).balance_due}
           orderNumber={order.order_number}
+          orderTotal={(order as any).total}
+          orderStatus={order.status}
         />
       </div>
     </div>

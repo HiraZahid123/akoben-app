@@ -17,7 +17,7 @@ const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'war
 
 const ALL_STATUSES: OrderStatus[] = ['draft', 'quote', 'confirmed', 'active', 'returned', 'cancelled', 'overdue']
 
-export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: OrderWithCustomer[]; quoteByOrderId?: Record<string, string> }) {
+export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: OrderWithCustomer[]; quoteByOrderId?: Record<string, { id: string; quote_number: string }> }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
 
@@ -92,7 +92,7 @@ export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: O
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500">
                   {quoteByOrderId[o.id] ? (
-                    <a href={`/quotes/${o.id}`} className="text-purple-600 hover:text-purple-700 font-medium">{quoteByOrderId[o.id]}</a>
+                    <a href={`/quotes/${quoteByOrderId[o.id].id}`} className="text-purple-600 hover:text-purple-700 font-medium">{quoteByOrderId[o.id].quote_number}</a>
                   ) : '—'}
                 </td>
                 <td className="px-4 py-3">

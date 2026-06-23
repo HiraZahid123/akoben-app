@@ -12,9 +12,9 @@ export default async function OrdersPage() {
   // Get quote numbers linked to these orders
   const orderIds = (orders ?? []).map(o => o.id)
   const { data: linkedQuotes } = orderIds.length > 0
-    ? await supabase.from('quotes').select('converted_to_order, quote_number').in('converted_to_order', orderIds)
+    ? await supabase.from('quotes').select('id, converted_to_order, quote_number').in('converted_to_order', orderIds)
     : { data: [] }
-  const quoteByOrderId = Object.fromEntries((linkedQuotes ?? []).map(q => [q.converted_to_order, q.quote_number]))
+  const quoteByOrderId = Object.fromEntries((linkedQuotes ?? []).map(q => [q.converted_to_order, { id: q.id, quote_number: q.quote_number }]))
 
   return (
     <div className="flex flex-col h-full">

@@ -44,6 +44,7 @@ export default function BarcodeScanner() {
   const [processing, setProcessing] = useState(false)
   const [log, setLog] = useState<ScanLogEntry[]>([])
   const [cameraError, setCameraError] = useState('')
+  const [damageUnitId, setDamageUnitId] = useState<string | null>(null)
   const scannerRef = useRef<any>(null)
   const scannerDivId = 'html5-qrscanner'
 
@@ -146,6 +147,7 @@ export default function BarcodeScanner() {
             .eq('id', unit.id)
             .single()
           setScanResult({ barcode, unit: updatedUnit as any })
+          if (mode === 'checkin') setDamageUnitId(unit.id)
         }
       } else {
         // Lookup only — log it
@@ -165,6 +167,16 @@ export default function BarcodeScanner() {
     } finally {
       setProcessing(false)
     }
+  }
+
+  async function markCondition(unitId: string, condition: 'damaged' | 'maintenance') {
+    await supabase.from('inventory_units').update({
+      condition,
+      status: 'maintenance',
+    }).eq('id', unitId)
+    setDamageUnitId(null)
+    setScanResult(prev => prev ? { ...prev, error: undefined, unit: prev.unit ? { ...prev.unit, condition, status: 'maintenance' } : prev.unit } : null)
+    await loadRecentLog()
   }
 
   async function handleManualSubmit(e: React.FormEvent) {
@@ -285,6 +297,25 @@ export default function BarcodeScanner() {
                   <div className={`flex items-center gap-1.5 text-sm font-medium ${mode === 'checkout' ? 'text-red-600' : mode === 'checkin' ? 'text-green-600' : 'text-blue-600'}`}>
                     <span>✓</span>
                     <span>{mode === 'checkout' ? 'Checked out' : mode === 'checkin' ? 'Checked in' : 'Lookup complete'}</span>
+                  </div>
+                )}
+                {damageUnitId === scanResult.unit?.id && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mb-2 font-medium">Item condition on return:</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => { setDamageUnitId(null) }}
+                        className="flex-1 py-1.5 bg-green-100 text-green-700 text-xs font-medium rounded-lg hover:bg-green-200 transition-colors">
+                        ✓ Good
+                      </button>
+                      <button onClick={() => markCondition(scanResult.unit!.id, 'damaged')}
+                        className="flex-1 py-1.5 bg-red-100 text-red-700 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors">
+                        ⚠ Damaged
+                      </button>
+                      <button onClick={() => markCondition(scanResult.unit!.id, 'maintenance')}
+                        className="flex-1 py-1.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-lg hover:bg-amber-200 transition-colors">
+                        🔧 Repairs
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

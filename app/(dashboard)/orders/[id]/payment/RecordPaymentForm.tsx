@@ -12,6 +12,8 @@ interface Props {
   customerId: string
   balanceDue: number
   orderNumber: string
+  orderTotal: number
+  orderStatus: string
 }
 
 const PAYMENT_TYPES = [
@@ -23,7 +25,7 @@ const PAYMENT_TYPES = [
 
 const MOBILE_MONEY_METHODS = ['mtn_mobile_money', 'vodafone_cash', 'airteltigo_money']
 
-export default function RecordPaymentForm({ orderId, invoiceId, customerId, balanceDue, orderNumber }: Props) {
+export default function RecordPaymentForm({ orderId, invoiceId, customerId, balanceDue, orderNumber, orderTotal, orderStatus }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
@@ -66,7 +68,18 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
       const { error: insertError } = await supabase.from('payments').insert(payload)
       if (insertError) throw insertError
 
-      success('Payment recorded successfully')
+      // Auto-confirm order when 50% deposit is reached
+      if (orderStatus === 'draft' && orderTotal > 0) {
+        const newAmountPaid = (orderTotal - balanceDue) + amount
+        if (newAmountPaid >= orderTotal * 0.5) {
+          await supabase.from('orders').update({ status: 'confirmed' }).eq('id', orderId)
+          success('Payment recorded — order confirmed (50% deposit reached)')
+        } else {
+          success('Payment recorded successfully')
+        }
+      } else {
+        success('Payment recorded successfully')
+      }
       router.push(`/orders/${orderId}`)
       router.refresh()
     } catch (err: any) {

@@ -41,6 +41,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               quoteNumber={quote.quote_number}
               currentStatus={quote.status as QuoteStatus}
               customerEmail={customer?.email}
+              customerPhone={customer?.phone}
               customerName={customer?.full_name}
               total={quote.total}
               expiresAt={formatDate(quote.expires_at)}

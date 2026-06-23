@@ -45,6 +45,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               invoiceNumber={invoice.invoice_number}
               currentStatus={invoice.status as InvoiceStatus}
               customerEmail={customer?.email}
+              customerPhone={customer?.phone}
               customerName={customer?.full_name}
               total={invoice.total}
               balanceDue={invoice.balance_due}

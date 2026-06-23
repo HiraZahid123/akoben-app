@@ -12,16 +12,24 @@ interface Props {
   quoteNumber: string
   currentStatus: QuoteStatus
   customerEmail: string | null
+  customerPhone: string | null
   customerName: string
   total: number
   expiresAt: string
   convertedToOrder?: string | null
 }
 
-export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerName, total, expiresAt, convertedToOrder }: Props) {
+export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerPhone, customerName, total, expiresAt, convertedToOrder }: Props) {
   const router = useRouter()
   const { success, error: toastError, info } = useToast()
   const [loading, setLoading] = useState(false)
+
+  function sendWhatsApp() {
+    if (!customerPhone) { toastError('No phone number on file for this customer'); return }
+    const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
+    const msg = `Hello ${customerName}, please find your quote *${quoteNumber}* from Akoben Event Rentals.\n\nTotal: GHS ${total.toFixed(2)}\nExpires: ${expiresAt}\n\nPlease reply to confirm or request changes. Thank you!`
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  }
 
   async function sendQuoteEmail() {
     if (!customerEmail) { toastError('No email on file for this customer'); return }
@@ -124,10 +132,16 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {currentStatus === 'draft' && (
-        <button onClick={sendQuoteEmail} disabled={loading}
-          className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-          {loading ? '...' : '📧 Send to Customer'}
-        </button>
+        <>
+          <button onClick={sendQuoteEmail} disabled={loading}
+            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            {loading ? '...' : '📧 Send to Customer'}
+          </button>
+          <button onClick={sendWhatsApp}
+            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
+            💬 WhatsApp
+          </button>
+        </>
       )}
       {currentStatus === 'sent' && (
         <>
@@ -138,6 +152,10 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
           <button onClick={sendQuoteEmail} disabled={loading}
             className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors">
             Resend
+          </button>
+          <button onClick={sendWhatsApp}
+            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
+            💬 WhatsApp
           </button>
         </>
       )}

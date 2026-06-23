@@ -13,16 +13,25 @@ interface Props {
   invoiceNumber: string
   currentStatus: InvoiceStatus
   customerEmail: string | null
+  customerPhone: string | null
   customerName: string
   total: number
   dueDate: string
   balanceDue?: number
 }
 
-export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerName, total, dueDate, balanceDue }: Props) {
+export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
+
+  function sendWhatsApp() {
+    if (!customerPhone) { toastError('No phone number on file for this customer'); return }
+    const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
+    const amount = balanceDue ?? total
+    const msg = `Hello ${customerName}, your invoice *${invoiceNumber}* from Akoben Event Rentals is ready.\n\nBalance Due: GHS ${amount.toFixed(2)}\nDue Date: ${dueDate}\n\nPlease make payment at your earliest convenience. Thank you!`
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  }
 
   async function sendPaystackLink() {
     if (!customerEmail) { toastError('No email on file for this customer'); return }
@@ -90,6 +99,10 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
           <button onClick={sendInvoiceEmail} disabled={loading}
             className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
             {loading ? '...' : '📧 Email Invoice'}
+          </button>
+          <button onClick={sendWhatsApp}
+            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors">
+            💬 WhatsApp
           </button>
           <button onClick={sendPaystackLink} disabled={loading}
             className="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
