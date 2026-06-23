@@ -67,6 +67,7 @@ export default function BarcodeScanner() {
       const { Html5Qrcode } = await import('html5-qrcode')
       const scanner = new Html5Qrcode(scannerDivId)
       scannerRef.current = scanner
+      setScanning(true)
       await scanner.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 150 } },
@@ -77,8 +78,8 @@ export default function BarcodeScanner() {
         },
         undefined
       )
-      setScanning(true)
     } catch (err: any) {
+      setScanning(false)
       setCameraError(err?.message ?? 'Camera access denied. Use manual entry below.')
     }
   }
@@ -232,7 +233,7 @@ export default function BarcodeScanner() {
             )}
           </div>
 
-          <div id={scannerDivId} className={scanning ? 'rounded-lg overflow-hidden' : 'hidden'} />
+          <div id={scannerDivId} className="rounded-lg overflow-hidden" style={{ display: scanning ? 'block' : 'none' }} />
 
           {!scanning && !cameraError && (
             <div className="h-32 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 text-sm">
