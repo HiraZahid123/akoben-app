@@ -30,7 +30,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         action={
           <div className="flex items-center gap-3">
             <Badge variant={STATUS_VARIANTS[quote.status as QuoteStatus]} className="capitalize text-sm px-3 py-1">
-              {quote.status}
+              {quote.status === 'accepted' && quote.converted_to_order ? 'Converted to Order' : quote.status}
             </Badge>
             <a href={`/quotes/${quote.id}/edit`}
               className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
@@ -44,6 +44,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               customerName={customer?.full_name}
               total={quote.total}
               expiresAt={formatDate(quote.expires_at)}
+              convertedToOrder={quote.converted_to_order}
             />
           </div>
         }
@@ -99,7 +100,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
                 <div className="flex justify-between text-green-600"><span>Discount ({quote.discount_pct}%)</span><span>−{formatGHS(quote.subtotal * quote.discount_pct / 100)}</span></div>
               )}
               {quote.delivery_fee > 0 && <div className="flex justify-between text-gray-600"><span>Delivery</span><span>{formatGHS(quote.delivery_fee)}</span></div>}
-              <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(quote.tax_amount)}</span></div>
+              {quote.tax_amount > 0 && <div className="flex justify-between text-gray-600"><span>VAT ({quote.tax_rate}%)</span><span>{formatGHS(quote.tax_amount)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(quote.total)}</span>
               </div>

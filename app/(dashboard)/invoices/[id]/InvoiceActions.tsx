@@ -61,7 +61,7 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
         body: JSON.stringify({
           to: customerEmail,
           subject: `Invoice ${invoiceNumber} — Akoben Event Rentals`,
-          html: invoiceEmailHtml({ customerName, invoiceNumber, total, dueDate }),
+          html: invoiceEmailHtml({ customerName, invoiceNumber, total: balanceDue ?? total, dueDate }),
         }),
       })
       if (res.ok) {
@@ -101,6 +101,12 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
             + Record Payment
           </a>
         </>
+      )}
+      {currentStatus === 'paid' && (
+        <a href={`/scanner`}
+          className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+          📦 Pull Order
+        </a>
       )}
       {currentStatus !== 'void' && currentStatus !== 'paid' && (
         <button onClick={markVoid} disabled={loading}

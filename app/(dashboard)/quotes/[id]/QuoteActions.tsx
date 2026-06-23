@@ -15,9 +15,10 @@ interface Props {
   customerName: string
   total: number
   expiresAt: string
+  convertedToOrder?: string | null
 }
 
-export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerName, total, expiresAt }: Props) {
+export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerName, total, expiresAt, convertedToOrder }: Props) {
   const router = useRouter()
   const { success, error: toastError, info } = useToast()
   const [loading, setLoading] = useState(false)
@@ -140,11 +141,17 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
           </button>
         </>
       )}
-      {currentStatus === 'accepted' && !loading && (
+      {currentStatus === 'accepted' && !convertedToOrder && (
         <button onClick={convertToOrder} disabled={loading}
           className="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors">
           {loading ? '...' : '→ Convert to Order'}
         </button>
+      )}
+      {currentStatus === 'accepted' && convertedToOrder && (
+        <a href={`/orders/${convertedToOrder}`}
+          className="px-3 py-1.5 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
+          ✓ View Order →
+        </a>
       )}
     </div>
   )

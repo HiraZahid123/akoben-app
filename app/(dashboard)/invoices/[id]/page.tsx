@@ -47,6 +47,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               customerEmail={customer?.email}
               customerName={customer?.full_name}
               total={invoice.total}
+              balanceDue={invoice.balance_due}
               dueDate={formatDate(invoice.due_date)}
             />
           </div>

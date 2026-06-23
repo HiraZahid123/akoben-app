@@ -17,7 +17,7 @@ const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'war
 
 const ALL_STATUSES: OrderStatus[] = ['draft', 'quote', 'confirmed', 'active', 'returned', 'cancelled', 'overdue']
 
-export default function OrdersTable({ orders }: { orders: OrderWithCustomer[] }) {
+export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: OrderWithCustomer[]; quoteByOrderId?: Record<string, string> }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
 
@@ -67,6 +67,7 @@ export default function OrdersTable({ orders }: { orders: OrderWithCustomer[] })
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50 text-left">
               <th className="px-4 py-3 font-medium text-gray-600">Order</th>
+              <th className="px-4 py-3 font-medium text-gray-600">Quote</th>
               <th className="px-4 py-3 font-medium text-gray-600">Customer</th>
               <th className="px-4 py-3 font-medium text-gray-600">Event</th>
               <th className="px-4 py-3 font-medium text-gray-600">Pickup</th>
@@ -80,7 +81,7 @@ export default function OrdersTable({ orders }: { orders: OrderWithCustomer[] })
           <tbody className="divide-y divide-gray-50">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-gray-400">No orders found</td>
+                <td colSpan={10} className="px-4 py-10 text-center text-gray-400">No orders found</td>
               </tr>
             ) : filtered.map(o => (
               <tr key={o.id} className="hover:bg-gray-50 transition-colors">
@@ -88,6 +89,11 @@ export default function OrdersTable({ orders }: { orders: OrderWithCustomer[] })
                   <a href={`/orders/${o.id}`} className="font-medium text-blue-600 hover:text-blue-700">
                     {o.order_number}
                   </a>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {quoteByOrderId[o.id] ? (
+                    <a href={`/quotes/${o.id}`} className="text-purple-600 hover:text-purple-700 font-medium">{quoteByOrderId[o.id]}</a>
+                  ) : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <div className="font-medium text-gray-900">{o.customer_name}</div>

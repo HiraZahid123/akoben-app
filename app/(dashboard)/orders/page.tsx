@@ -9,6 +9,13 @@ export default async function OrdersPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
+  // Get quote numbers linked to these orders
+  const orderIds = (orders ?? []).map(o => o.id)
+  const { data: linkedQuotes } = orderIds.length > 0
+    ? await supabase.from('quotes').select('converted_to_order, quote_number').in('converted_to_order', orderIds)
+    : { data: [] }
+  const quoteByOrderId = Object.fromEntries((linkedQuotes ?? []).map(q => [q.converted_to_order, q.quote_number]))
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
@@ -22,7 +29,7 @@ export default async function OrdersPage() {
         }
       />
       <div className="flex-1 overflow-auto p-6">
-        <OrdersTable orders={orders ?? []} />
+        <OrdersTable orders={orders ?? []} quoteByOrderId={quoteByOrderId} />
       </div>
     </div>
   )

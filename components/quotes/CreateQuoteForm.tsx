@@ -47,6 +47,8 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
   const [venueAddress, setVenueAddress] = useState(initialData?.venue_address ?? '')
   const [deliveryFee, setDeliveryFee] = useState(String(initialData?.delivery_fee ?? '0'))
   const [discountPct, setDiscountPct] = useState(String(initialData?.discount_pct ?? '0'))
+  const [securityDepositType, setSecurityDepositType] = useState<'pct' | 'fixed'>('pct')
+  const [securityDepositValue, setSecurityDepositValue] = useState('')
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [lineItems, setLineItems] = useState<LineItem[]>(
     initialData?.quote_items?.map(qi => ({
@@ -69,7 +71,13 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
   const dFee = parseFloat(deliveryFee || '0')
   const taxable = subtotal - discountAmount + dFee
   const taxAmount = Math.round(taxable * GHANA_VAT_RATE / 100 * 100) / 100
-  const total = taxable + taxAmount
+  const totalBeforeDeposit = taxable + taxAmount
+  const securityDeposit = securityDepositValue
+    ? securityDepositType === 'pct'
+      ? Math.round(totalBeforeDeposit * parseFloat(securityDepositValue) / 100 * 100) / 100
+      : parseFloat(securityDepositValue)
+    : 0
+  const total = totalBeforeDeposit
 
   const filteredItems = inventoryItems.filter(i =>
     i.quantity_available > 0 &&
@@ -276,6 +284,7 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
               )}
               {dFee > 0 && <div className="flex justify-between text-gray-600"><span>Delivery</span><span>{formatGHS(dFee)}</span></div>}
               {taxAmount > 0 && <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(taxAmount)}</span></div>}
+              {securityDeposit > 0 && <div className="flex justify-between text-amber-600"><span>Security Deposit</span><span>{formatGHS(securityDeposit)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(total)}</span>
               </div>
@@ -285,6 +294,19 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
               <input type="number" min="0" max="100" step="0.5" value={discountPct}
                 onChange={e => setDiscountPct(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Security Deposit</label>
+              <div className="flex gap-2">
+                <select value={securityDepositType} onChange={e => setSecurityDepositType(e.target.value as 'pct' | 'fixed')}
+                  className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="pct">%</option>
+                  <option value="fixed">Fixed</option>
+                </select>
+                <input type="number" min="0" step="0.01" placeholder={securityDepositType === 'pct' ? 'e.g. 30' : 'e.g. 200'}
+                  value={securityDepositValue} onChange={e => setSecurityDepositValue(e.target.value)}
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
             </div>
             <button type="submit" disabled={saving || lineItems.length === 0}
               className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
