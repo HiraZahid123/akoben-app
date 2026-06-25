@@ -9,7 +9,7 @@ export default async function RecordPaymentPage({ params }: { params: Promise<{ 
 
   const [{ data: order }, { data: invoice }] = await Promise.all([
     supabase.from('orders_with_customer').select('*').eq('id', id).single(),
-    supabase.from('invoices').select('id').eq('order_id', id).maybeSingle(),
+    supabase.from('invoices').select('id, total, balance_due').eq('order_id', id).maybeSingle(),
   ])
 
   if (!order) notFound()
@@ -25,7 +25,8 @@ export default async function RecordPaymentPage({ params }: { params: Promise<{ 
           orderId={id}
           invoiceId={invoice?.id ?? null}
           customerId={order.customer_id}
-          balanceDue={(order as any).balance_due}
+          balanceDue={(invoice as any)?.balance_due ?? (order as any).balance_due}
+          invoiceTotal={(invoice as any)?.total ?? (order as any).total}
           orderNumber={order.order_number}
           orderTotal={(order as any).total}
           orderStatus={order.status}

@@ -18,12 +18,34 @@ interface Props {
   total: number
   dueDate: string
   balanceDue?: number
+  isBooked?: boolean
+  amountPaid?: number
 }
 
-export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue }: Props) {
+export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue, isBooked, amountPaid }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
+  const [booked, setBooked] = useState(isBooked ?? false)
+
+  const paid = amountPaid ?? 0
+  const depositMet = total > 0 && paid >= total * 0.5
+
+  async function bookEvent() {
+    if (!depositMet) { toastError('At least 50% deposit required to book event'); return }
+    if (!confirm('Book this event? This will register it on the calendar and activate the Pull Order.')) return
+    setLoading(true)
+    try {
+      await supabase.from('orders').update({ is_booked: true, booked_at: new Date().toISOString(), status: 'confirmed' }).eq('id', orderId)
+      setBooked(true)
+      success('Event booked — now appears on the Calendar. Pull Order is now active.')
+      router.refresh()
+    } catch (err: any) {
+      toastError(err.message ?? 'Failed to book event')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   function sendWhatsApp() {
     if (!customerPhone) { toastError('No phone number on file for this customer'); return }
@@ -115,10 +137,25 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
           </a>
         </>
       )}
-      {currentStatus === 'paid' && (
-        <a href={`/scanner`}
+      {/* Book Event button — shown when deposit is met but not yet booked */}
+      {!booked && depositMet && currentStatus !== 'void' && (
+        <button onClick={bookEvent} disabled={loading}
+          className="px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+          {loading ? '...' : '📅 Book Event'}
+        </button>
+      )}
+      {/* Pull Order — only active after booking */}
+      {booked && (
+        <a href={`/delivery/pull/${orderId}`}
           className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
           📦 Pull Order
+        </a>
+      )}
+      {/* Return Order — only after booking */}
+      {booked && (
+        <a href={`/delivery/return/${orderId}`}
+          className="px-3 py-1.5 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors">
+          📥 Return Order
         </a>
       )}
       {currentStatus !== 'void' && currentStatus !== 'paid' && (

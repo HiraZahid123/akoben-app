@@ -131,33 +131,21 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {currentStatus === 'draft' && (
-        <>
-          <button onClick={sendQuoteEmail} disabled={loading}
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-            {loading ? '...' : '📧 Send to Customer'}
-          </button>
-          <button onClick={sendWhatsApp}
-            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
-            💬 WhatsApp
-          </button>
-        </>
-      )}
+      {/* Resend buttons — always visible so updated quotes can be re-sent */}
+      <button onClick={sendQuoteEmail} disabled={loading}
+        className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        {loading ? '...' : currentStatus === 'draft' ? '📧 Send to Customer' : '📧 Resend Email'}
+      </button>
+      <button onClick={sendWhatsApp}
+        className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
+        💬 WhatsApp
+      </button>
+
       {currentStatus === 'sent' && (
-        <>
-          <button onClick={markAccepted} disabled={loading}
-            className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
-            {loading ? '...' : '✓ Mark Accepted'}
-          </button>
-          <button onClick={sendQuoteEmail} disabled={loading}
-            className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors">
-            Resend
-          </button>
-          <button onClick={sendWhatsApp}
-            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
-            💬 WhatsApp
-          </button>
-        </>
+        <button onClick={markAccepted} disabled={loading}
+          className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
+          {loading ? '...' : '✓ Mark Accepted'}
+        </button>
       )}
       {currentStatus === 'accepted' && !convertedToOrder && (
         <button onClick={convertToOrder} disabled={loading}

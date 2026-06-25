@@ -9,24 +9,19 @@ export default async function DashboardPage() {
     { count: totalOrders },
     { count: activeOrders },
     { count: overdueOrders },
-    { data: revenueData },
     { count: totalCustomers },
   ] = await Promise.all([
     supabase.from('orders').select('*', { count: 'exact', head: true }).not('status', 'in', '(draft,cancelled)'),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'overdue'),
-    (supabase.from('revenue_by_month') as any).select('revenue_ghs').limit(1),
     supabase.from('customers').select('*', { count: 'exact', head: true }),
   ])
 
-  const thisMonthRevenue = revenueData?.[0]?.revenue_ghs ?? 0
-
   const stats = [
-    { label: 'Total Orders',       value: totalOrders ?? 0,               suffix: '',   color: 'bg-blue-50 text-blue-700' },
-    { label: 'Active Rentals',     value: activeOrders ?? 0,              suffix: '',   color: 'bg-green-50 text-green-700' },
-    { label: 'Overdue',            value: overdueOrders ?? 0,             suffix: '',   color: 'bg-red-50 text-red-700' },
-    { label: 'Monthly Revenue',    value: formatGHS(thisMonthRevenue),    suffix: '',   color: 'bg-purple-50 text-purple-700' },
-    { label: 'Total Customers',    value: totalCustomers ?? 0,            suffix: '',   color: 'bg-orange-50 text-orange-700' },
+    { label: 'Total Orders',    value: totalOrders ?? 0,    color: 'bg-blue-50 text-blue-700' },
+    { label: 'Active Rentals',  value: activeOrders ?? 0,   color: 'bg-green-50 text-green-700' },
+    { label: 'Overdue',         value: overdueOrders ?? 0,  color: 'bg-red-50 text-red-700' },
+    { label: 'Total Customers', value: totalCustomers ?? 0, color: 'bg-orange-50 text-orange-700' },
   ]
 
   return (
@@ -40,7 +35,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {stats.map(stat => (
           <div key={stat.label} className={`rounded-xl p-5 ${stat.color}`}>
-            <div className="text-2xl font-bold">{stat.value}{stat.suffix}</div>
+            <div className="text-2xl font-bold">{stat.value}{(stat as any).suffix}</div>
             <div className="text-sm mt-1 opacity-80">{stat.label}</div>
           </div>
         ))}

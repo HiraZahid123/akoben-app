@@ -42,14 +42,12 @@ export const ORDER_STATUS_COLORS: Record<string, string> = {
 // Payment method display labels
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash:               'Cash',
-  card:               'Card',
   bank_transfer:      'Bank Transfer',
   mtn_mobile_money:   'MTN Mobile Money',
   vodafone_cash:      'Vodafone Cash',
-  airteltigo_money:   'AirtelTigo Money',
+  airteltigo_money:   'Telecel Cash',
   cheque:             'Cheque',
-  invoice_net30:      'Invoice Net 30',
-  invoice_net60:      'Invoice Net 60',
+  card:               'Card',
 }
 
 // Ghana regions list

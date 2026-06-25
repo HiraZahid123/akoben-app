@@ -11,13 +11,19 @@ const STATUS_VARIANTS: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'w
   paid: 'success', overdue: 'danger', void: 'default',
 }
 
+const STATUS_LABELS: Partial<Record<InvoiceStatus, string>> = {
+  paid:    'Fully Paid',
+  partial: 'Partially Paid',
+  unpaid:  'Unpaid',
+}
+
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
   const [r1, r2] = await Promise.all([
     supabase.from('invoices')
-      .select('*, customers(id, full_name, company_name, email, phone), orders(id, order_number, event_name, order_items(*, inventory_items(name)))')
+      .select('*, customers(id, full_name, company_name, email, phone), orders(id, order_number, event_name, is_booked, order_items(*, inventory_items(name)))')
       .eq('id', id).single(),
     supabase.from('payments').select('*').eq('invoice_id', id).order('created_at'),
   ])
@@ -36,8 +42,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         subtitle={`${customer?.full_name} — ${order?.event_name ?? ''}`}
         action={
           <div className="flex items-center gap-3">
-            <Badge variant={STATUS_VARIANTS[invoice.status as InvoiceStatus]} className="capitalize text-sm px-3 py-1">
-              {invoice.status}
+            <Badge variant={STATUS_VARIANTS[invoice.status as InvoiceStatus]} className="text-sm px-3 py-1">
+              {STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
             </Badge>
             <InvoiceActions
               invoiceId={invoice.id}
@@ -49,7 +55,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               customerName={customer?.full_name}
               total={invoice.total}
               balanceDue={invoice.balance_due}
+              amountPaid={invoice.amount_paid}
               dueDate={formatDate(invoice.due_date)}
+              isBooked={order?.is_booked ?? false}
             />
           </div>
         }

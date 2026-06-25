@@ -115,6 +115,10 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               <div><span className="text-gray-500">Pickup:</span> <span className="text-gray-800 ml-1">{formatDate(quote.pickup_date)}</span></div>
               <div><span className="text-gray-500">Return:</span> <span className="text-gray-800 ml-1">{formatDate(quote.return_date)}</span></div>
               <div><span className="text-gray-500">Expires:</span> <span className="text-gray-800 ml-1">{formatDate(quote.expires_at)}</span></div>
+              {quote.venue_name && <div><span className="text-gray-500">Venue:</span> <span className="text-gray-800 ml-1">{quote.venue_name}</span></div>}
+              {quote.venue_region && <div><span className="text-gray-500">Region:</span> <span className="text-gray-800 ml-1">{quote.venue_region}</span></div>}
+              {quote.venue_address && <div><span className="text-gray-500">Address:</span> <span className="text-gray-800 ml-1">{quote.venue_address}</span></div>}
+              {(quote as any).setup_fee > 0 && <div><span className="text-gray-500">Setup Fee:</span> <span className="text-gray-800 ml-1">{formatGHS((quote as any).setup_fee)}</span></div>}
             </div>
           </div>
 

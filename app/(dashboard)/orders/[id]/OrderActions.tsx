@@ -7,9 +7,8 @@ import { useToast } from '@/components/ui/ToastProvider'
 import type { OrderStatus } from '@/types/database'
 
 const TRANSITIONS: Partial<Record<OrderStatus, { label: string; next: OrderStatus; color: string }[]>> = {
-  draft:     [{ label: 'Confirm Order',          next: 'confirmed', color: 'bg-green-600 hover:bg-green-700' }],
-  confirmed: [{ label: 'Mark Active (Items Out)', next: 'active',    color: 'bg-blue-600 hover:bg-blue-700' }],
-  active:    [{ label: 'Mark Returned',           next: 'returned',  color: 'bg-purple-600 hover:bg-purple-700' }],
+  draft:     [{ label: 'Confirm Order', next: 'confirmed', color: 'bg-green-600 hover:bg-green-700' }],
+  active:    [{ label: 'Mark Returned', next: 'returned',  color: 'bg-purple-600 hover:bg-purple-700' }],
 }
 
 const STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
@@ -18,12 +17,13 @@ const STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
   returned: 'Order marked as returned',
 }
 
-export default function OrderActions({ orderId, currentStatus, orderNumber, customerName, customerPhone, eventName, total }: {
+export default function OrderActions({ orderId, currentStatus, orderNumber, customerName, customerPhone, customerEmail, eventName, total }: {
   orderId: string
   currentStatus: OrderStatus
   orderNumber?: string
   customerName?: string
   customerPhone?: string | null
+  customerEmail?: string | null
   eventName?: string
   total?: number
 }) {
@@ -37,6 +37,26 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
     const msg = `Hello ${customerName}, your order *${orderNumber}* has been confirmed with Akoben Event Rentals.\n\nEvent: ${eventName}\nTotal: GHS ${(total ?? 0).toFixed(2)}\n\nThank you for booking with us!`
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
+  async function sendEmail() {
+    if (!customerEmail) { error('No email on file for this customer'); return }
+    setLoading(true)
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: customerEmail,
+          subject: `Order ${orderNumber} — Akoben Event Rentals`,
+          html: `<p>Dear ${customerName},</p><p>Your order <strong>${orderNumber}</strong> for <strong>${eventName}</strong> has been updated.</p><p>Total: <strong>GHS ${(total ?? 0).toFixed(2)}</strong></p><p>Please contact us if you have any questions. Thank you for booking with Akoben Event Rentals!</p>`,
+        }),
+      })
+      if (res.ok) success(`Order emailed to ${customerEmail}`)
+      else error('Failed to send email')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function changeStatus(next: OrderStatus) {
@@ -96,6 +116,10 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
         className="px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
         📄 Contract
       </a>
+      <button onClick={sendEmail} disabled={loading}
+        className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        {loading ? '...' : '📧 Email'}
+      </button>
       {customerPhone && (
         <button onClick={sendWhatsApp}
           className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">

@@ -10,6 +10,14 @@ const STATUS_VARIANTS: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'w
   paid: 'success', overdue: 'danger', void: 'default',
 }
 
+const STATUS_LABELS: Partial<Record<InvoiceStatus, string>> = {
+  paid:    'Fully Paid',
+  partial: 'Partially Paid',
+  unpaid:  'Unpaid',
+}
+
+const FILTER_STATUSES: InvoiceStatus[] = ['unpaid', 'partial', 'paid', 'overdue', 'sent', 'void']
+
 export default function InvoicesTable({ invoices }: { invoices: any[] }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all')
@@ -22,8 +30,6 @@ export default function InvoicesTable({ invoices }: { invoices: any[] }) {
     return matchSearch && matchStatus
   })
 
-  const statuses: InvoiceStatus[] = ['draft', 'sent', 'unpaid', 'partial', 'paid', 'overdue', 'void']
-
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="flex items-center gap-3 p-4 border-b border-gray-100 flex-wrap">
@@ -33,9 +39,11 @@ export default function InvoicesTable({ invoices }: { invoices: any[] }) {
         <div className="flex gap-1 flex-wrap">
           <button onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>All</button>
-          {statuses.map(s => (
+          {FILTER_STATUSES.map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${statusFilter === s ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{s}</button>
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === s ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              {STATUS_LABELS[s] ?? s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
           ))}
         </div>
         <span className="text-sm text-gray-500 ml-auto">{filtered.length} invoices</span>
@@ -69,7 +77,9 @@ export default function InvoicesTable({ invoices }: { invoices: any[] }) {
                 <td className="px-4 py-3 text-gray-600">{inv.orders?.order_number ?? '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{formatDate(inv.due_date)}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANTS[inv.status as InvoiceStatus]} className="capitalize">{inv.status}</Badge>
+                  <Badge variant={STATUS_VARIANTS[inv.status as InvoiceStatus]}>
+                    {STATUS_LABELS[inv.status as InvoiceStatus] ?? inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                  </Badge>
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-gray-900">{formatGHS(inv.total)}</td>
                 <td className="px-4 py-3 text-right">

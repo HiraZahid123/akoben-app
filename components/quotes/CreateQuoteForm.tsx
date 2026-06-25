@@ -22,8 +22,11 @@ interface InitialQuoteData {
   return_date: string | null
   expires_at: string | null
   delivery_method: string
+  venue_name: string | null
+  venue_region: string | null
   venue_address: string | null
   delivery_fee: number
+  setup_fee: number
   discount_pct: number
   notes: string | null
   quote_items: { item_id: string; quantity: number; unit_rate: number; rental_days: number; inventory_items: { name: string } | null }[]
@@ -44,8 +47,11 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
   const [returnDate, setReturnDate] = useState(initialData?.return_date?.slice(0, 16) ?? '')
   const [expiresAt, setExpiresAt] = useState(initialData?.expires_at?.slice(0, 10) ?? '')
   const [deliveryMethod, setDeliveryMethod] = useState(initialData?.delivery_method ?? 'customer_pickup')
+  const [venueName, setVenueName] = useState(initialData?.venue_name ?? '')
+  const [venueRegion, setVenueRegion] = useState(initialData?.venue_region ?? '')
   const [venueAddress, setVenueAddress] = useState(initialData?.venue_address ?? '')
   const [deliveryFee, setDeliveryFee] = useState(String(initialData?.delivery_fee ?? '0'))
+  const [setupFee, setSetupFee] = useState(String(initialData?.setup_fee ?? '0'))
   const [discountPct, setDiscountPct] = useState(String(initialData?.discount_pct ?? '0'))
   const [securityDepositType, setSecurityDepositType] = useState<'pct' | 'fixed'>('pct')
   const [securityDepositValue, setSecurityDepositValue] = useState('')
@@ -109,8 +115,11 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
       return_date:     returnDate || null,
       expires_at:      expiresAt || null,
       delivery_method: deliveryMethod as any,
+      venue_name:      venueName || null,
+      venue_region:    venueRegion as any || null,
       venue_address:   venueAddress || null,
       delivery_fee:    dFee,
+      setup_fee:       parseFloat(setupFee) || 0,
       discount_pct:    parseFloat(discountPct) || 0,
       subtotal:        subtotal,
       tax_rate:        GHANA_VAT_RATE,
@@ -187,6 +196,28 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Venue Name</label>
+                <input value={venueName} onChange={e => setVenueName(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Labadi Beach Hotel" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Venue Region</label>
+                <select value={venueRegion} onChange={e => setVenueRegion(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Select region...</option>
+                  {['Ahafo','Ashanti','Bono','Bono East','Central','Eastern','Greater Accra','North East','Northern','Oti','Savannah','Upper East','Upper West','Volta','Western','Western North'].map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Venue Address</label>
+                <input value={venueAddress} onChange={e => setVenueAddress(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Liberation Rd, Accra" />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Date</label>
                 <input type="datetime-local" value={pickupDate} onChange={e => setPickupDate(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -204,6 +235,11 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Fee (₵)</label>
                 <input type="number" min="0" step="0.01" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Setup Fee (₵)</label>
+                <input type="number" min="0" step="0.01" value={setupFee} onChange={e => setSetupFee(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="col-span-2">

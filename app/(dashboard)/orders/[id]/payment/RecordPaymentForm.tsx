@@ -11,28 +11,21 @@ interface Props {
   invoiceId: string | null
   customerId: string
   balanceDue: number
+  invoiceTotal: number
   orderNumber: string
   orderTotal: number
   orderStatus: string
 }
 
-const PAYMENT_TYPES = [
-  { value: 'deposit', label: 'Deposit' },
-  { value: 'partial', label: 'Partial Payment' },
-  { value: 'final', label: 'Final Payment' },
-  { value: 'refund', label: 'Refund' },
-]
-
 const MOBILE_MONEY_METHODS = ['mtn_mobile_money', 'vodafone_cash', 'airteltigo_money']
 
-export default function RecordPaymentForm({ orderId, invoiceId, customerId, balanceDue, orderNumber, orderTotal, orderStatus }: Props) {
+export default function RecordPaymentForm({ orderId, invoiceId, customerId, balanceDue, invoiceTotal, orderNumber, orderTotal, orderStatus }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    amount: balanceDue > 0 ? String(balanceDue.toFixed(2)) : '',
-    payment_type: 'partial',
+    amount: '',
     method: 'cash',
     mobile_number: '',
     reference: '',
@@ -50,6 +43,7 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
     setError('')
     const amount = parseFloat(form.amount)
     if (!amount || amount <= 0) { setError('Enter a valid amount'); return }
+    if (amount > balanceDue + 0.01) { setError(`Amount cannot exceed balance due of ${formatGHS(balanceDue)}`); return }
 
     setLoading(true)
     try {
@@ -57,30 +51,46 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
         order_id: orderId,
         customer_id: customerId,
         amount,
-        payment_type: form.payment_type,
+        payment_type: amount >= balanceDue - 0.01 ? 'final' : 'partial',
         method: form.method,
         reference: form.reference || null,
         notes: form.notes || null,
       }
       if (invoiceId) payload.invoice_id = invoiceId
+
       if (isMoMo && form.mobile_number) payload.mobile_number = form.mobile_number
 
       const { error: insertError } = await supabase.from('payments').insert(payload)
       if (insertError) throw insertError
 
-      // Auto-confirm order when 50% deposit is reached
-      if (orderStatus === 'draft' && orderTotal > 0) {
-        const newAmountPaid = (orderTotal - balanceDue) + amount
-        if (newAmountPaid >= orderTotal * 0.5) {
+      // Fetch all payments for this invoice to compute totals correctly
+      if (invoiceId) {
+        const { data: allPayments } = await supabase
+          .from('payments')
+          .select('amount')
+          .eq('invoice_id', invoiceId)
+        const totalPaid = (allPayments ?? []).reduce((s, p) => s + (p.amount ?? 0), 0)
+        const remaining = Math.max(0, invoiceTotal - totalPaid)
+        const newStatus = remaining <= 0.01 ? 'paid' : totalPaid > 0 ? 'partial' : 'unpaid'
+        await supabase.from('invoices').update({
+          amount_paid: totalPaid,
+          balance_due: remaining,
+          status: newStatus as any,
+          ...(newStatus === 'paid' ? { paid_at: new Date().toISOString() } : {}),
+        }).eq('id', invoiceId)
+
+        // Auto-confirm order when 50% deposit reached
+        if (orderStatus === 'draft' && orderTotal > 0 && totalPaid >= orderTotal * 0.5) {
           await supabase.from('orders').update({ status: 'confirmed' }).eq('id', orderId)
           success('Payment recorded — order confirmed (50% deposit reached)')
         } else {
           success('Payment recorded successfully')
         }
+        router.push(`/invoices/${invoiceId}`)
       } else {
         success('Payment recorded successfully')
+        router.push(`/orders/${orderId}`)
       }
-      router.push(`/orders/${orderId}`)
       router.refresh()
     } catch (err: any) {
       const msg = err.message ?? 'Failed to record payment'
@@ -110,19 +120,10 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
           type="number" step="0.01" min="0.01" required
           value={form.amount}
           onChange={e => set('amount', e.target.value)}
-          placeholder="0.00"
+          placeholder={`e.g. ${formatGHS(balanceDue).replace('₵', '')}`}
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Type *</label>
-        <select value={form.payment_type} onChange={e => set('payment_type', e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          {PAYMENT_TYPES.map(t => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
+        <p className="text-xs text-gray-400 mt-1">Enter the exact amount received. Max: {formatGHS(balanceDue)}</p>
       </div>
 
       <div>

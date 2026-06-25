@@ -179,6 +179,21 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
     )
     if (itemsErr) { setError(itemsErr.message); toastError(itemsErr.message); setSaving(false); return }
 
+    // Sync linked invoice totals when editing
+    if (editMode) {
+      const { data: inv } = await supabase.from('invoices').select('id, amount_paid').eq('order_id', orderId).limit(1).maybeSingle()
+      if (inv) {
+        const amtPaid = inv.amount_paid ?? 0
+        await supabase.from('invoices').update({
+          subtotal,
+          delivery_fee: dFee,
+          tax_amount: taxAmount,
+          total,
+          balance_due: Math.max(0, total - amtPaid),
+        }).eq('id', inv.id)
+      }
+    }
+
     success(editMode ? 'Order updated successfully' : 'Order created successfully')
     router.push(`/orders/${orderId}`)
   }

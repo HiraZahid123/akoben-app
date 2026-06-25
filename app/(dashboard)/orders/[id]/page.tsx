@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
-import { formatGHS, formatDateTime, PAYMENT_METHOD_LABELS } from '@/lib/utils'
+import { formatGHS, formatDateTime } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import type { OrderStatus } from '@/types/database'
 import OrderActions from './OrderActions'
@@ -15,11 +15,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: order }, { data: items }, { data: payments }] = await Promise.all([
+  const [{ data: order }, { data: items }] = await Promise.all([
     supabase.from('orders_with_customer').select('*').eq('id', id).single(),
-    supabase.from('order_items').select('*, inventory_items(name, sku)').eq('order_id', id),
-    supabase.from('payments').select('*').eq('order_id', id).order('created_at'),
+    supabase.from('order_items').select('*, inventory_items(id, name, sku, inventory_units(id, status))').eq('order_id', id),
   ])
+
+  // Check availability: for each item, count how many units are NOT 'out' right now
+  const availabilityMap: Record<string, { available: number; ordered: number }> = {}
+  for (const item of items ?? []) {
+    const units = (item.inventory_items as any)?.inventory_units ?? []
+    const available = units.filter((u: any) => u.status === 'available').length
+    availabilityMap[item.id] = { available, ordered: item.quantity }
+  }
 
   if (!order) notFound()
 
@@ -39,6 +46,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               orderNumber={order.order_number}
               customerName={order.customer_name}
               customerPhone={(order as any).customer_phone}
+              customerEmail={order.customer_email}
               eventName={order.event_name}
               total={(order as any).total}
             />
@@ -51,7 +59,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div className="col-span-2 space-y-5">
           {/* Items */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">Rental Items</div>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <span className="font-semibold text-gray-800">Rental Items</span>
+              <span className="text-xs text-gray-400">Live availability shown below</span>
+            </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-left">
@@ -60,59 +71,48 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <th className="px-5 py-3 font-medium text-gray-600 text-center">Days</th>
                   <th className="px-5 py-3 font-medium text-gray-600 text-right">Rate/Day</th>
                   <th className="px-5 py-3 font-medium text-gray-600 text-right">Total</th>
+                  <th className="px-5 py-3 font-medium text-gray-600 text-center">Availability</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {items?.map(item => (
-                  <tr key={item.id}>
-                    <td className="px-5 py-3">
-                      <div className="font-medium text-gray-900">{(item.inventory_items as any)?.name}</div>
-                      <div className="text-xs text-gray-400">{(item.inventory_items as any)?.sku}</div>
-                    </td>
-                    <td className="px-5 py-3 text-center text-gray-700">{item.quantity}</td>
-                    <td className="px-5 py-3 text-center text-gray-700">{item.rental_days}</td>
-                    <td className="px-5 py-3 text-right text-gray-700">{formatGHS(item.unit_rate)}</td>
-                    <td className="px-5 py-3 text-right font-medium text-gray-900">{formatGHS(item.line_total)}</td>
-                  </tr>
-                ))}
+                {items?.map(item => {
+                  const avail = availabilityMap[item.id]
+                  const isUnavailable = avail && avail.available < item.quantity
+                  return (
+                    <tr key={item.id} className={isUnavailable ? 'bg-red-50' : ''}>
+                      <td className="px-5 py-3">
+                        <div className="font-medium text-gray-900">{(item.inventory_items as any)?.name}</div>
+                        <div className="text-xs text-gray-400">{(item.inventory_items as any)?.sku}</div>
+                      </td>
+                      <td className="px-5 py-3 text-center text-gray-700">{item.quantity}</td>
+                      <td className="px-5 py-3 text-center text-gray-700">{item.rental_days}</td>
+                      <td className="px-5 py-3 text-right text-gray-700">{formatGHS(item.unit_rate)}</td>
+                      <td className="px-5 py-3 text-right font-medium text-gray-900">{formatGHS(item.line_total)}</td>
+                      <td className="px-5 py-3 text-center">
+                        {isUnavailable ? (
+                          <div className="space-y-1">
+                            <span className="inline-block text-xs px-2 py-0.5 bg-red-100 text-red-700 font-medium rounded-full">
+                              ⚠ Only {avail.available} available
+                            </span>
+                            <div>
+                              <a href={`/api/orders/remove-item?orderId=${id}&itemId=${item.id}`}
+                                className="text-xs text-red-500 hover:text-red-700 underline"
+                                onClick={e => { if (!confirm('Remove this item from the order?')) e.preventDefault() }}>
+                                Remove item
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 font-medium rounded-full">✓ Available</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
 
-          {/* Payments */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <span className="font-semibold text-gray-800">Payments</span>
-              <a href={`/orders/${id}/payment`}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium">+ Record Payment</a>
-            </div>
-            {payments && payments.length > 0 ? (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100 text-left">
-                    <th className="px-5 py-3 font-medium text-gray-600">Date</th>
-                    <th className="px-5 py-3 font-medium text-gray-600">Method</th>
-                    <th className="px-5 py-3 font-medium text-gray-600">Type</th>
-                    <th className="px-5 py-3 font-medium text-gray-600">Reference</th>
-                    <th className="px-5 py-3 font-medium text-gray-600 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {payments.map(p => (
-                    <tr key={p.id}>
-                      <td className="px-5 py-3 text-gray-600">{formatDateTime(p.created_at)}</td>
-                      <td className="px-5 py-3 text-gray-700">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</td>
-                      <td className="px-5 py-3 capitalize text-gray-600">{p.payment_type}</td>
-                      <td className="px-5 py-3 text-gray-500 text-xs">{p.reference ?? '—'}</td>
-                      <td className="px-5 py-3 text-right font-medium text-green-600">{formatGHS(p.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="px-5 py-6 text-sm text-gray-400">No payments recorded yet.</p>
-            )}
-          </div>
         </div>
 
         {/* Sidebar */}

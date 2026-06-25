@@ -10,12 +10,17 @@ const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'war
   quote:     'info',
   confirmed: 'success',
   active:    'success',
-  returned:  'purple',
+  returned:  'success',
   cancelled: 'danger',
   overdue:   'warning',
 }
 
-const ALL_STATUSES: OrderStatus[] = ['draft', 'quote', 'confirmed', 'active', 'returned', 'cancelled', 'overdue']
+const STATUS_LABEL: Partial<Record<OrderStatus, string>> = {
+  active:   'Confirmed',
+  returned: 'Confirmed',
+}
+
+const FILTER_STATUSES: OrderStatus[] = ['draft', 'quote', 'confirmed', 'cancelled', 'overdue']
 
 export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: OrderWithCustomer[]; quoteByOrderId?: Record<string, { id: string; quote_number: string }> }) {
   const [search, setSearch] = useState('')
@@ -48,7 +53,7 @@ export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: O
           >
             All
           </button>
-          {ALL_STATUSES.map(s => (
+          {FILTER_STATUSES.map(s => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
@@ -74,14 +79,13 @@ export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: O
               <th className="px-4 py-3 font-medium text-gray-600">Return</th>
               <th className="px-4 py-3 font-medium text-gray-600">Status</th>
               <th className="px-4 py-3 font-medium text-gray-600 text-right">Total</th>
-              <th className="px-4 py-3 font-medium text-gray-600 text-right">Balance</th>
               <th className="px-4 py-3 font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-10 text-center text-gray-400">No orders found</td>
+                <td colSpan={9} className="px-4 py-10 text-center text-gray-400">No orders found</td>
               </tr>
             ) : filtered.map(o => (
               <tr key={o.id} className="hover:bg-gray-50 transition-colors">
@@ -106,14 +110,11 @@ export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: O
                 <td className="px-4 py-3 text-gray-600">{formatDate(o.pickup_date)}</td>
                 <td className="px-4 py-3 text-gray-600">{formatDate(o.return_date)}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANTS[o.status]} className="capitalize">{o.status}</Badge>
+                  <Badge variant={STATUS_VARIANTS[o.status]} className="capitalize">
+                    {STATUS_LABEL[o.status] ?? o.status}
+                  </Badge>
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-gray-900">{formatGHS(o.total)}</td>
-                <td className="px-4 py-3 text-right">
-                  <span className={o.balance_due > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
-                    {formatGHS(o.balance_due)}
-                  </span>
-                </td>
                 <td className="px-4 py-3">
                   <a href={`/orders/${o.id}`} className="text-xs text-blue-600 hover:text-blue-700 font-medium">View</a>
                 </td>

@@ -84,7 +84,9 @@ export default function QuotesTable({ quotes }: { quotes: any[] }) {
                 <td className="px-4 py-3 text-gray-600">{formatDate(q.event_date)}</td>
                 <td className="px-4 py-3 text-gray-600">{formatDate(q.expires_at)}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANTS[q.status as QuoteStatus]} className="capitalize">{q.status}</Badge>
+                  <Badge variant={STATUS_VARIANTS[q.status as QuoteStatus]} className="capitalize">
+                    {q.status === 'accepted' && q.converted_to_order ? 'Converted to Order' : q.status}
+                  </Badge>
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-gray-900">{formatGHS(q.total)}</td>
                 <td className="px-4 py-3">
