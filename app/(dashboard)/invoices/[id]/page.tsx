@@ -136,14 +136,31 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
         {/* Sidebar */}
         <div className="space-y-4">
+          {/* Voided invoice warning */}
+          {invoice.status === 'void' && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-red-700 mb-1">⊘ Invoice Voided</p>
+              <p className="text-xs text-red-600">This invoice has been voided. It is kept for traceability only and should not be collected against.</p>
+            </div>
+          )}
+
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-            <h3 className="font-semibold text-gray-800">Balance</h3>
+            <h3 className="font-semibold text-gray-800">Summary</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-gray-600"><span>Invoice Total</span><span className="font-medium">{formatGHS(invoice.total)}</span></div>
               <div className="flex justify-between text-green-600"><span>Amount Paid</span><span className="font-medium">{formatGHS(invoice.amount_paid)}</span></div>
-              <div className={`flex justify-between font-bold pt-2 border-t border-gray-100 text-base ${invoice.balance_due > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                <span>Balance Due</span><span>{formatGHS(invoice.balance_due)}</span>
-              </div>
+              {invoice.status === 'void' && invoice.amount_paid > 0 ? (
+                <>
+                  <div className="flex justify-between font-bold pt-2 border-t border-gray-100 text-base text-red-600">
+                    <span>Balance</span><span>−{formatGHS(invoice.amount_paid)}</span>
+                  </div>
+                  <p className="text-xs text-red-500 pt-1">A negative balance exists because payments were made before this invoice was voided. A refund or credit note may be required.</p>
+                </>
+              ) : (
+                <div className={`flex justify-between font-bold pt-2 border-t border-gray-100 text-base ${invoice.balance_due > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span>Balance Due</span><span>{formatGHS(invoice.balance_due)}</span>
+                </div>
+              )}
             </div>
           </div>
 

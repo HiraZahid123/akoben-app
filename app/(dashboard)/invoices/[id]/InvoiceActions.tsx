@@ -106,7 +106,11 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
   }
 
   async function markVoid() {
-    if (!confirm('Mark this invoice as void?')) return
+    const hasPayments = (amountPaid ?? 0) > 0
+    const msg = hasPayments
+      ? `Void this invoice? Payments of GHS ${(amountPaid ?? 0).toFixed(2)} have already been recorded — a negative balance will show in the summary. You may need to issue a refund or credit note.`
+      : 'Void this invoice? It will be kept for traceability but marked as invalid.'
+    if (!confirm(msg)) return
     setLoading(true)
     await (supabase.from('invoices') as any).update({ status: 'void' }).eq('id', invoiceId)
     success('Invoice marked as void')
@@ -158,10 +162,11 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
           📥 Return Order
         </a>
       )}
-      {currentStatus !== 'void' && currentStatus !== 'paid' && (
+      {currentStatus !== 'void' && (
         <button onClick={markVoid} disabled={loading}
-          className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors">
-          Void
+          className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
+          title="Void this invoice — kept for traceability. If payments were made, a negative balance will show.">
+          {loading ? '...' : '⊘ Void'}
         </button>
       )}
       <a href={`/api/pdf/invoice/${invoiceId}`} target="_blank"

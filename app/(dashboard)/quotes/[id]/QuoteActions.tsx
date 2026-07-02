@@ -64,6 +64,25 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
     setLoading(false)
   }
 
+  async function deleteQuote() {
+    if (!confirm('Permanently delete this quote? This cannot be undone.')) return
+    setLoading(true)
+    await supabase.from('quote_items').delete().eq('quote_id', quoteId)
+    await supabase.from('quotes').delete().eq('id', quoteId)
+    success('Quote deleted')
+    router.push('/quotes')
+    setLoading(false)
+  }
+
+  async function voidQuote() {
+    if (!confirm('Void this quote? It will be marked as void for record-keeping but not deleted.')) return
+    setLoading(true)
+    await supabase.from('quotes').update({ status: 'void' as any }).eq('id', quoteId)
+    success('Quote voided')
+    router.refresh()
+    setLoading(false)
+  }
+
   async function convertToOrder() {
     setLoading(true)
     // Fetch quote items to copy over
@@ -158,6 +177,24 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
           className="px-3 py-1.5 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
           ✓ View Order →
         </a>
+      )}
+
+      {/* Void — for quotes converted to order but had errors (keeps record) */}
+      {(currentStatus as string) !== 'void' && (
+        <button onClick={voidQuote} disabled={loading}
+          className="px-3 py-1.5 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 disabled:opacity-50 transition-colors"
+          title="Mark as void — keeps the record but flags it as invalid">
+          {loading ? '...' : '⊘ Void'}
+        </button>
+      )}
+
+      {/* Delete — only for quotes not yet converted to an order */}
+      {!convertedToOrder && (currentStatus as string) !== 'void' && (
+        <button onClick={deleteQuote} disabled={loading}
+          className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
+          title="Permanently delete this quote — use only if it was never converted to an order">
+          {loading ? '...' : '🗑 Delete'}
+        </button>
       )}
     </div>
   )

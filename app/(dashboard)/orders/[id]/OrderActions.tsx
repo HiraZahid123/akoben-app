@@ -66,6 +66,14 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
     setLoading(false)
   }
 
+  async function voidOrder() {
+    if (!confirm('Void this order? It will be flagged as void for traceability but not deleted.')) return
+    setLoading(true)
+    const { error: err } = await supabase.from('orders').update({ status: 'cancelled' as OrderStatus }).eq('id', orderId)
+    if (err) { error('Failed to void order') } else { success('Order voided — marked as cancelled') ; router.refresh() }
+    setLoading(false)
+  }
+
   async function generateInvoice() {
     setLoading(true)
     const { data: existing } = await supabase.from('invoices').select('id').eq('order_id', orderId).limit(1).single()
@@ -124,6 +132,13 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
         <button onClick={sendWhatsApp}
           className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
           💬 WhatsApp
+        </button>
+      )}
+      {currentStatus !== 'cancelled' && currentStatus !== 'returned' && (
+        <button onClick={voidOrder} disabled={loading}
+          className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
+          title="Void this order — marks it as cancelled for traceability">
+          {loading ? '...' : '⊘ Void Order'}
         </button>
       )}
     </div>
