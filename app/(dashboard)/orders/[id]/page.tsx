@@ -5,6 +5,7 @@ import { formatGHS, formatDateTime } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import type { OrderStatus } from '@/types/database'
 import OrderActions from './OrderActions'
+import RemoveItemLink from './RemoveItemLink'
 
 const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
   draft: 'default', quote: 'info', confirmed: 'success', active: 'success',
@@ -95,11 +96,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                               ⚠ Only {avail.available} available
                             </span>
                             <div>
-                              <a href={`/api/orders/remove-item?orderId=${id}&itemId=${item.id}`}
-                                className="text-xs text-red-500 hover:text-red-700 underline"
-                                onClick={e => { if (!confirm('Remove this item from the order?')) e.preventDefault() }}>
-                                Remove item
-                              </a>
+                              <RemoveItemLink orderId={id} itemId={item.id} />
                             </div>
                           </div>
                         ) : (
