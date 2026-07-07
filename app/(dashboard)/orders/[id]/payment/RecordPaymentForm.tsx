@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, PAYMENT_METHOD_LABELS } from '@/lib/utils'
@@ -31,8 +31,14 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
     reference: '',
     notes: '',
   })
+  const [canOverride, setCanOverride] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/me').then(r => r.json()).then(d => setCanOverride(!!d.canOverridePayment)).catch(() => {})
+  }, [])
 
   const isMoMo = MOBILE_MONEY_METHODS.includes(form.method)
+  const isOverride = form.method === 'override_50'
 
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
@@ -79,13 +85,26 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
           ...(newStatus === 'paid' ? { paid_at: new Date().toISOString() } : {}),
         }).eq('id', invoiceId)
 
-        // Auto-confirm order when 50% deposit reached
-        if (orderStatus === 'draft' && orderTotal > 0 && totalPaid >= orderTotal * 0.5) {
-          await supabase.from('orders').update({ status: 'confirmed' }).eq('id', orderId)
-          success('Payment recorded — order confirmed (50% deposit reached)')
+        // Auto-confirm order when 50% deposit reached, or immediately if override used
+        if (orderStatus === 'draft' && orderTotal > 0 && (totalPaid >= orderTotal * 0.5 || isOverride)) {
+          await supabase.from('orders').update({ status: 'confirmed', ...(isOverride ? { booked_via_override: true } : {}) }).eq('id', orderId)
+          success(isOverride ? 'Payment recorded — order confirmed via manager override' : 'Payment recorded — order confirmed (50% deposit reached)')
         } else {
           success('Payment recorded successfully')
         }
+
+        if (isOverride) {
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: 'irenebaidoo.agyapong@gmail.com',
+              subject: `50% Override Payment Used — Order ${orderNumber}`,
+              html: `<p>A manager used the <strong>Override 50%</strong> payment option on order <strong>${orderNumber}</strong>.</p><p>Amount recorded: GHS ${amount.toFixed(2)}. Total paid so far: GHS ${totalPaid.toFixed(2)} of GHS ${invoiceTotal.toFixed(2)}.</p>`,
+            }),
+          }).catch(() => {})
+        }
+
         router.push(`/invoices/${invoiceId}`)
       } else {
         success('Payment recorded successfully')
@@ -130,10 +149,17 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
         <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method *</label>
         <select value={form.method} onChange={e => set('method', e.target.value)}
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
+          {Object.entries(PAYMENT_METHOD_LABELS)
+            .filter(([value]) => value !== 'override_50' || canOverride)
+            .map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
         </select>
+        {isOverride && (
+          <p className="text-xs text-amber-600 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            ⚠ Using this will confirm the order regardless of the 50% deposit rule and notify Irene by email.
+          </p>
+        )}
       </div>
 
       {isMoMo && (

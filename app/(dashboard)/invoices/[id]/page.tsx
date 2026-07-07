@@ -4,6 +4,8 @@ import Badge from '@/components/ui/Badge'
 import { formatGHS, formatDate, formatDateTime, PAYMENT_METHOD_LABELS } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import InvoiceActions from './InvoiceActions'
+import InvoiceBookingActions from './InvoiceBookingActions'
+import VoidButton from './VoidButton'
 import type { InvoiceStatus } from '@/types/database'
 
 const STATUS_VARIANTS: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
@@ -41,25 +43,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         title={invoice.invoice_number}
         subtitle={`${customer?.full_name} — ${order?.event_name ?? ''}`}
         action={
-          <div className="flex items-center gap-3">
-            <Badge variant={STATUS_VARIANTS[invoice.status as InvoiceStatus]} className="text-sm px-3 py-1">
-              {STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-            </Badge>
-            <InvoiceActions
-              invoiceId={invoice.id}
-              orderId={invoice.order_id}
-              invoiceNumber={invoice.invoice_number}
-              currentStatus={invoice.status as InvoiceStatus}
-              customerEmail={customer?.email}
-              customerPhone={customer?.phone}
-              customerName={customer?.full_name}
-              total={invoice.total}
-              balanceDue={invoice.balance_due}
-              amountPaid={invoice.amount_paid}
-              dueDate={formatDate(invoice.due_date)}
-              isBooked={order?.is_booked ?? false}
-            />
-          </div>
+          <InvoiceActions
+            invoiceId={invoice.id}
+            orderId={invoice.order_id}
+            invoiceNumber={invoice.invoice_number}
+            currentStatus={invoice.status as InvoiceStatus}
+            customerEmail={customer?.email}
+            customerPhone={customer?.phone}
+            customerName={customer?.full_name}
+            total={invoice.total}
+            balanceDue={invoice.balance_due}
+            dueDate={formatDate(invoice.due_date)}
+          />
         }
       />
 
@@ -103,10 +98,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
           {/* Payments */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <span className="font-semibold text-gray-800">Payment History</span>
-              <a href={`/orders/${invoice.order_id}/payment`} className="text-sm text-blue-600 hover:text-blue-700 font-medium">+ Record Payment</a>
-            </div>
+            <div className="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">Payment History</div>
             {payments && payments.length > 0 ? (
               <table className="w-full text-sm">
                 <thead>
@@ -131,6 +123,21 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             ) : (
               <p className="px-5 py-6 text-sm text-gray-400">No payments recorded yet.</p>
             )}
+            {/* Status, Void, and PDF — below payment history per invoice layout */}
+            <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+              <Badge variant={STATUS_VARIANTS[invoice.status as InvoiceStatus]} className="text-sm px-3 py-1">
+                {STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+              </Badge>
+              <div className="flex items-center gap-2">
+                {invoice.status !== 'void' && (
+                  <VoidButton invoiceId={invoice.id} amountPaid={invoice.amount_paid} />
+                )}
+                <a href={`/api/pdf/invoice/${invoice.id}`} target="_blank"
+                  className="px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
+                  ⬇ PDF
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -164,6 +171,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
 
+          {/* Booking & Delivery — adjacent to the summary box */}
+          <InvoiceBookingActions
+            invoiceId={invoice.id}
+            orderId={invoice.order_id}
+            invoiceNumber={invoice.invoice_number}
+            customerName={customer?.full_name}
+            total={invoice.total}
+            amountPaid={invoice.amount_paid}
+            isBooked={order?.is_booked ?? false}
+            currentStatus={invoice.status}
+          />
+
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="font-semibold text-gray-800">Details</h3>
             <div className="text-sm space-y-1.5">
@@ -181,6 +200,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               {customer?.phone && <div className="text-gray-600">{customer.phone}</div>}
             </div>
           </div>
+
+          {/* Record Payment — below the customer box */}
+          {invoice.status !== 'paid' && invoice.status !== 'void' && (
+            <a href={`/orders/${invoice.order_id}/payment`}
+              className="block text-center px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors">
+              + Record Payment
+            </a>
+          )}
         </div>
       </div>
     </div>

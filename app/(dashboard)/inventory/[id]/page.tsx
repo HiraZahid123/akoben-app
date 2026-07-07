@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
 import UnitsTable from './UnitsTable'
+import BundleManager from './BundleManager'
 import { formatGHS } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 
@@ -45,6 +46,7 @@ export default async function InventoryDetailPage({ params }: { params: Promise<
       <div className="p-6 grid grid-cols-3 gap-6 max-w-6xl">
         <div className="col-span-2 space-y-5">
           <UnitsTable units={units} itemName={item.name} itemId={id} />
+          <BundleManager itemId={id} itemName={item.name} />
         </div>
 
         {/* Sidebar */}

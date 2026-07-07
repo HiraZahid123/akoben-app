@@ -8,13 +8,13 @@ import type { OrderStatus } from '@/types/database'
 
 const TRANSITIONS: Partial<Record<OrderStatus, { label: string; next: OrderStatus; color: string }[]>> = {
   draft:     [{ label: 'Confirm Order', next: 'confirmed', color: 'bg-green-600 hover:bg-green-700' }],
-  active:    [{ label: 'Mark Returned', next: 'returned',  color: 'bg-purple-600 hover:bg-purple-700' }],
+  active:    [{ label: 'Mark Complete', next: 'complete',  color: 'bg-purple-600 hover:bg-purple-700' }],
 }
 
 const STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
   confirmed: 'Order confirmed',
   active: 'Order marked active — items are out',
-  returned: 'Order marked as returned',
+  complete: 'Order marked as complete',
 }
 
 export default function OrderActions({ orderId, currentStatus, orderNumber, customerName, customerPhone, customerEmail, eventName, total }: {
@@ -134,7 +134,7 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
           💬 WhatsApp
         </button>
       )}
-      {currentStatus !== 'cancelled' && currentStatus !== 'returned' && (
+      {currentStatus !== 'cancelled' && currentStatus !== 'returned' && currentStatus !== 'complete' && (
         <button onClick={voidOrder} disabled={loading}
           className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
           title="Void this order — marks it as cancelled for traceability">

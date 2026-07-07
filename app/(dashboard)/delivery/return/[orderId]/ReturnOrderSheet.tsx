@@ -91,13 +91,13 @@ export default function ReturnOrderSheet({ order, items, invoiceNumber, checkedO
             unit_id: unitId,
             item_id: item.inventory_items?.id,
             action: 'checkin',
-            result: cond === 'good' ? 'success' : cond,
+            result: `return_order:${order.order_number}:${cond === 'good' ? 'success' : cond}`,
           })
         }
       }
 
-      // Mark order as returned
-      await supabase.from('orders').update({ status: 'returned' }).eq('id', order.id)
+      // Return fully confirmed — order is now complete
+      await supabase.from('orders').update({ status: 'complete' }).eq('id', order.id)
 
       setSubmitted(true)
       success(`Return confirmed — ${totalIn} items checked back in for ${order.order_number}`)

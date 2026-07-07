@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
@@ -15,13 +15,18 @@ interface OrderItem {
   inventory_items: { id: string; name: string; sku: string | null; inventory_units: Unit[] } | null
 }
 
+interface Bundle { id: string; item_id: string; bundle_sku: string; bundle_name: string; unit_count: number }
+
 interface Props {
   order: any
   items: OrderItem[]
   invoiceNumber: string | null
+  balanceDue?: number
+  invoiceTotal?: number
+  bundles?: Bundle[]
 }
 
-export default function PullOrderSheet({ order, items, invoiceNumber }: Props) {
+export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue = 0, invoiceTotal = 0, bundles = [] }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
 
@@ -30,7 +35,15 @@ export default function PullOrderSheet({ order, items, invoiceNumber }: Props) {
   const [scanInput, setScanInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [canOverride, setCanOverride] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const isFullyPaid = balanceDue <= 0.01
+  const [useOverride, setUseOverride] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/me').then(r => r.json()).then(d => setCanOverride(!!d.canOverridePayment)).catch(() => {})
+  }, [])
 
   // Flat map: barcode/unit_number → unit + item
   const unitMap: Record<string, { unit: Unit; item: OrderItem }> = {}
@@ -41,12 +54,44 @@ export default function PullOrderSheet({ order, items, invoiceNumber }: Props) {
     }
   }
 
+  // Bundle SKU → item + unit_count (scanning it checks out N units at once)
+  const bundleMap: Record<string, { item: OrderItem; bundle: Bundle }> = {}
+  for (const bundle of bundles) {
+    const item = items.find(i => i.inventory_items?.id === bundle.item_id)
+    if (item) bundleMap[bundle.bundle_sku] = { item, bundle }
+  }
+
   function handleScan(e: React.FormEvent) {
     e.preventDefault()
     const code = scanInput.trim()
     if (!code) return
+
+    // Bundle SKU scan — checks out unit_count units at once
+    const foundBundle = bundleMap[code]
+    if (foundBundle) {
+      const { item, bundle } = foundBundle
+      const already = scannedByItem[item.id] ?? []
+      const availableUnits = (item.inventory_items?.inventory_units ?? []).filter(u => u.status === 'available' && !already.includes(u.id))
+      if (availableUnits.length < bundle.unit_count) {
+        toastError(`Not enough available units to scan bundle "${bundle.bundle_name}" (needs ${bundle.unit_count}, only ${availableUnits.length} left)`)
+        setScanInput('')
+        return
+      }
+      if (already.length + bundle.unit_count > item.quantity) {
+        toastError(`Bundle would exceed ordered quantity of ${item.quantity} for ${item.inventory_items?.name}`)
+        setScanInput('')
+        return
+      }
+      const toAdd = availableUnits.slice(0, bundle.unit_count).map(u => u.id)
+      setScannedByItem(prev => ({ ...prev, [item.id]: [...(prev[item.id] ?? []), ...toAdd] }))
+      success(`Bundle "${bundle.bundle_name}" scanned — ${bundle.unit_count} units checked out`)
+      setScanInput('')
+      inputRef.current?.focus()
+      return
+    }
+
     const found = unitMap[code]
-    if (!found) { toastError(`No unit found for barcode: ${code}`); setScanInput(''); return }
+    if (!found) { toastError(`No unit or bundle found for: ${code}`); setScanInput(''); return }
     const { unit, item } = found
     if (unit.status !== 'available') { toastError(`Unit ${unit.unit_number ?? code} is not available (${unit.status})`); setScanInput(''); return }
     const already = scannedByItem[item.id] ?? []
@@ -67,6 +112,10 @@ export default function PullOrderSheet({ order, items, invoiceNumber }: Props) {
   async function confirmPull() {
     const totalScanned = Object.values(scannedByItem).reduce((s, arr) => s + arr.length, 0)
     if (totalScanned === 0) { toastError('No items scanned yet'); return }
+    if (!isFullyPaid && !useOverride) {
+      toastError('Order must be paid in full before release, or use the manager override below')
+      return
+    }
     setLoading(true)
     try {
       for (const item of items) {
@@ -83,7 +132,23 @@ export default function PullOrderSheet({ order, items, invoiceNumber }: Props) {
           })
         }
       }
-      await supabase.from('orders').update({ status: 'active' }).eq('id', order.id)
+      await supabase.from('orders').update({
+        status: 'active',
+        ...(useOverride ? { pulled_via_override: true } : {}),
+      }).eq('id', order.id)
+
+      if (useOverride) {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: 'irenebaidoo.agyapong@gmail.com',
+            subject: `50% Override Used — Pull Order ${order.order_number}`,
+            html: `<p>A manager used the override to release <strong>${order.order_number}</strong> (${order.customer_name}) with a pending balance.</p><p>Balance due at release: GHS ${balanceDue.toFixed(2)} of GHS ${invoiceTotal.toFixed(2)}.</p>`,
+          }),
+        }).catch(() => {})
+      }
+
       setSubmitted(true)
       success(`Pull order confirmed — ${totalScanned} items checked out for ${order.order_number}`)
       setTimeout(() => router.push('/delivery'), 1500)
@@ -190,18 +255,34 @@ export default function PullOrderSheet({ order, items, invoiceNumber }: Props) {
             })}
           </tbody>
         </table>
-        <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
-          <div className="text-sm text-gray-500">
-            {totalScanned === totalOrdered
-              ? <span className="text-green-600 font-medium">✓ All items accounted for</span>
-              : <span className="text-amber-600">{totalOrdered - totalScanned} item(s) still need scanning</span>}
+        <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 space-y-3">
+          {/* Payment gate */}
+          <div className={`rounded-lg px-4 py-2.5 text-sm flex items-center justify-between ${isFullyPaid ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <span>
+              {isFullyPaid ? '✓ Invoice fully paid — order can be released' : `⚠ Balance of GHS ${balanceDue.toFixed(2)} still due — order cannot be released without payment`}
+            </span>
           </div>
-          <button
-            onClick={confirmPull}
-            disabled={loading || totalScanned === 0}
-            className="px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
-            {loading ? 'Processing...' : '✓ Confirm Pull Order'}
-          </button>
+
+          {!isFullyPaid && canOverride && (
+            <label className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <input type="checkbox" checked={useOverride} onChange={e => setUseOverride(e.target.checked)} />
+              <span>Manager override — release with pending balance of GHS {balanceDue.toFixed(2)}. This will email Irene.</span>
+            </label>
+          )}
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm text-gray-500">
+              {totalScanned === totalOrdered
+                ? <span className="text-green-600 font-medium">✓ All items accounted for</span>
+                : <span className="text-amber-600">{totalOrdered - totalScanned} item(s) still need scanning</span>}
+            </div>
+            <button
+              onClick={confirmPull}
+              disabled={loading || totalScanned === 0 || (!isFullyPaid && !useOverride)}
+              className="px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
+              {loading ? 'Processing...' : '✓ Confirm Pull Order'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

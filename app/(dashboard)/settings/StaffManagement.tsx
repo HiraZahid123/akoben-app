@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/ToastProvider'
 import Badge from '@/components/ui/Badge'
+import { ROLE_LABELS, MANAGER_CREATABLE_ROLES, roleHasOverridePrivilege, type UserRole } from '@/lib/permissions'
 
 interface StaffMember {
   id: string
@@ -10,16 +11,24 @@ interface StaffMember {
   email: string
   role: string
   is_active: boolean
+  can_override_payment?: boolean
   created_at: string
 }
 
-export default function StaffManagement() {
+const ALL_ROLES = Object.keys(ROLE_LABELS) as UserRole[]
+
+export default function StaffManagement({ currentUserRole }: { currentUserRole: UserRole }) {
   const { success, error: toastError } = useToast()
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', staffRole: 'staff' })
+  const [form, setForm] = useState({ full_name: '', email: '', password: '', staffRole: 'staff1' as UserRole, canOverridePayment: false })
+
+  // Manager cannot create/assign the Bookkeeper/Accountant role
+  const assignableRoles = currentUserRole === 'manager'
+    ? ALL_ROLES.filter(r => MANAGER_CREATABLE_ROLES.includes(r))
+    : ALL_ROLES
 
   useEffect(() => { loadStaff() }, [])
 
@@ -42,7 +51,7 @@ export default function StaffManagement() {
     setSaving(false)
     if (!res.ok) { toastError(data.error); return }
     success(`${form.full_name} added successfully`)
-    setForm({ full_name: '', email: '', password: '', staffRole: 'staff' })
+    setForm({ full_name: '', email: '', password: '', staffRole: 'staff1', canOverridePayment: false })
     setAdding(false)
     loadStaff()
   }
@@ -58,6 +67,10 @@ export default function StaffManagement() {
   }
 
   async function changeRole(member: StaffMember, newRole: string) {
+    if (currentUserRole === 'manager' && newRole === 'bookkeeper') {
+      toastError('Managers cannot assign the Bookkeeper/Accountant role')
+      return
+    }
     await fetch('/api/staff', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -67,12 +80,25 @@ export default function StaffManagement() {
     loadStaff()
   }
 
+  async function toggleOverride(member: StaffMember) {
+    await fetch('/api/staff', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: member.id, canOverridePayment: !member.can_override_payment }),
+    })
+    success(member.can_override_payment ? 'Override permission removed' : 'Override permission granted')
+    loadStaff()
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <div>
           <h2 className="font-semibold text-gray-900">Staff Accounts</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Admin — full access. Staff — orders, inventory, customers, scanner only.</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Roles follow the Staff Permissions Matrix (Admin, Manager, Staff 1/2, Bookkeeper, Set-Up/Breakdown Crew, Driver).
+            {currentUserRole === 'manager' && ' You cannot create or assign the Bookkeeper/Accountant role.'}
+          </p>
         </div>
         <button onClick={() => setAdding(true)}
           className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
@@ -105,13 +131,19 @@ export default function StaffManagement() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Role *</label>
-              <select value={form.staffRole} onChange={e => setForm(f => ({ ...f, staffRole: e.target.value }))}
+              <select value={form.staffRole} onChange={e => setForm(f => ({ ...f, staffRole: e.target.value as UserRole }))}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="staff">Staff (limited access)</option>
-                <option value="admin">Admin (full access)</option>
+                {assignableRoles.map(r => (
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                ))}
               </select>
             </div>
           </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <input type="checkbox" checked={form.canOverridePayment}
+              onChange={e => setForm(f => ({ ...f, canOverridePayment: e.target.checked }))} />
+            <span>Grant <strong>50% Override</strong> permission — allows booking events or releasing pull orders with an unmet balance. Every use sends an email alert to Irene.</span>
+          </label>
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
@@ -135,36 +167,56 @@ export default function StaffManagement() {
               <th className="px-5 py-3 font-medium text-gray-600">Name</th>
               <th className="px-5 py-3 font-medium text-gray-600">Email</th>
               <th className="px-5 py-3 font-medium text-gray-600">Role</th>
+              <th className="px-5 py-3 font-medium text-gray-600">50% Override</th>
               <th className="px-5 py-3 font-medium text-gray-600">Status</th>
               <th className="px-5 py-3 font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {staff.map(member => (
-              <tr key={member.id} className="hover:bg-gray-50">
-                <td className="px-5 py-3 font-medium text-gray-900">{member.full_name}</td>
-                <td className="px-5 py-3 text-gray-500">{member.email}</td>
-                <td className="px-5 py-3">
-                  <select value={member.role}
-                    onChange={e => changeRole(member, e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <option value="staff">Staff</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
-                <td className="px-5 py-3">
-                  <Badge variant={member.is_active ? 'success' : 'default'} className="text-xs">
-                    {member.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </td>
-                <td className="px-5 py-3">
-                  <button onClick={() => toggleActive(member)}
-                    className={`text-xs font-medium ${member.is_active ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800'}`}>
-                    {member.is_active ? 'Deactivate' : 'Activate'}
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {staff.map(member => {
+              const memberRole = member.role as UserRole
+              const roleAlwaysOverrides = roleHasOverridePrivilege(memberRole)
+              return (
+                <tr key={member.id} className="hover:bg-gray-50">
+                  <td className="px-5 py-3 font-medium text-gray-900">{member.full_name}</td>
+                  <td className="px-5 py-3 text-gray-500">{member.email}</td>
+                  <td className="px-5 py-3">
+                    <select value={member.role}
+                      onChange={e => changeRole(member, e.target.value)}
+                      className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                      {ALL_ROLES.map(r => (
+                        <option key={r} value={r} disabled={currentUserRole === 'manager' && r === 'bookkeeper'}>
+                          {ROLE_LABELS[r]}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-5 py-3">
+                    {roleAlwaysOverrides ? (
+                      <span className="text-xs text-gray-400">Always allowed</span>
+                    ) : (
+                      <button onClick={() => toggleOverride(member)}
+                        className={`text-xs font-medium px-2 py-1 rounded-full transition-colors ${
+                          member.can_override_payment ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}>
+                        {member.can_override_payment ? '✓ Granted' : 'Grant'}
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
+                    <Badge variant={member.is_active ? 'success' : 'default'} className="text-xs">
+                      {member.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-3">
+                    <button onClick={() => toggleActive(member)}
+                      className={`text-xs font-medium ${member.is_active ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800'}`}>
+                      {member.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       )}

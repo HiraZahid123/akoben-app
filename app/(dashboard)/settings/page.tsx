@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation'
 
 export default async function SettingsPage() {
   const role = await getCurrentUserRole()
-  if (role !== 'admin') redirect('/dashboard')
+  if (role !== 'admin' && role !== 'manager') redirect('/dashboard')
 
   const supabase = await createServerSupabaseClient()
 
@@ -24,9 +24,9 @@ export default async function SettingsPage() {
     <div className="flex flex-col h-full">
       <PageHeader title="Settings" subtitle="Business configuration" />
       <div className="flex-1 overflow-auto p-6 space-y-8 max-w-3xl">
-        <SettingsForm settings={settings} />
-        <StaffManagement />
-        <IntegrationsPanel paystackConfigured={paystackConfigured} />
+        {role === 'admin' && <SettingsForm settings={settings} />}
+        <StaffManagement currentUserRole={role} />
+        {role === 'admin' && <IntegrationsPanel paystackConfigured={paystackConfigured} />}
       </div>
     </div>
   )

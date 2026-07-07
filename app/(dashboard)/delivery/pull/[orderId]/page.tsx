@@ -12,10 +12,21 @@ export default async function PullOrderPage({ params }: { params: Promise<{ orde
     supabase.from('order_items')
       .select('*, inventory_items(id, name, sku, inventory_units(id, unit_number, barcode, status, condition))')
       .eq('order_id', orderId),
-    supabase.from('invoices').select('id, invoice_number').eq('order_id', orderId).maybeSingle(),
+    supabase.from('invoices').select('id, invoice_number, total, balance_due').eq('order_id', orderId).maybeSingle(),
   ])
 
   if (!order) notFound()
+
+  const itemIds = (items ?? []).map(i => (i.inventory_items as any)?.id).filter(Boolean)
+  const { data: bundles } = itemIds.length > 0
+    ? await supabase.from('inventory_bundles').select('*').in('item_id', itemIds).eq('status', 'available')
+    : { data: [] }
+
+  // Pull Order becomes active starting 1 day before the pickup date
+  const oneDayBeforePickup = order.pickup_date
+    ? new Date(new Date(order.pickup_date).getTime() - 24 * 60 * 60 * 1000)
+    : null
+  const isActiveYet = !oneDayBeforePickup || new Date() >= oneDayBeforePickup
 
   return (
     <div>
@@ -29,7 +40,25 @@ export default async function PullOrderPage({ params }: { params: Promise<{ orde
         }
       />
       <div className="p-6">
-        <PullOrderSheet order={order as any} items={items ?? []} invoiceNumber={invoice?.invoice_number ?? null} />
+        {!isActiveYet ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 max-w-2xl text-center">
+            <div className="text-3xl mb-2">🔒</div>
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Pull Order Not Yet Active</h2>
+            <p className="text-sm text-gray-600">
+              This order's pickup date is <strong>{new Date(order.pickup_date).toLocaleDateString()}</strong>.
+              Pull Order becomes available starting <strong>{oneDayBeforePickup?.toLocaleDateString()}</strong> (1 day before pickup).
+            </p>
+          </div>
+        ) : (
+          <PullOrderSheet
+            order={order as any}
+            items={items ?? []}
+            invoiceNumber={invoice?.invoice_number ?? null}
+            balanceDue={invoice?.balance_due ?? 0}
+            invoiceTotal={invoice?.total ?? 0}
+            bundles={bundles ?? []}
+          />
+        )}
       </div>
     </div>
   )

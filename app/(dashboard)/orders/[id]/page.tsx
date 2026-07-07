@@ -6,10 +6,11 @@ import { notFound } from 'next/navigation'
 import type { OrderStatus } from '@/types/database'
 import OrderActions from './OrderActions'
 import RemoveItemLink from './RemoveItemLink'
+import { computeDateRangeAvailability } from '@/lib/availability'
 
 const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
   draft: 'default', quote: 'info', confirmed: 'success', active: 'success',
-  returned: 'purple', cancelled: 'danger', overdue: 'warning',
+  returned: 'purple', complete: 'purple', cancelled: 'danger', overdue: 'warning',
 }
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,18 +19,29 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const [{ data: order }, { data: items }] = await Promise.all([
     supabase.from('orders_with_customer').select('*').eq('id', id).single(),
-    supabase.from('order_items').select('*, inventory_items(id, name, sku, inventory_units(id, status))').eq('order_id', id),
+    supabase.from('order_items').select('*, inventory_items(id, name, sku)').eq('order_id', id),
   ])
 
-  // Check availability: for each item, count how many units are NOT 'out' right now
+  if (!order) notFound()
+
+  // Check availability against this order's own pickup–return date range,
+  // counting reservations from every other overlapping order — not just today's stock.
+  const itemIds = (items ?? []).map(i => (i.inventory_items as any)?.id).filter(Boolean)
+  const availability = order.pickup_date && order.return_date
+    ? await computeDateRangeAvailability(supabase, {
+        excludeOrderId: order.id,
+        pickupDate: order.pickup_date,
+        returnDate: order.return_date,
+        itemIds,
+      })
+    : {}
+
   const availabilityMap: Record<string, { available: number; ordered: number }> = {}
   for (const item of items ?? []) {
-    const units = (item.inventory_items as any)?.inventory_units ?? []
-    const available = units.filter((u: any) => u.status === 'available').length
-    availabilityMap[item.id] = { available, ordered: item.quantity }
+    const itemId = (item.inventory_items as any)?.id
+    const avail = availability[itemId]
+    availabilityMap[item.id] = { available: avail?.availableForRange ?? 0, ordered: item.quantity }
   }
-
-  if (!order) notFound()
 
   return (
     <div>

@@ -48,6 +48,7 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   airteltigo_money:   'Telecel Cash',
   cheque:             'Cheque',
   card:               'Card',
+  override_50:        'Override 50% (Manager)',
 }
 
 // Ghana regions list

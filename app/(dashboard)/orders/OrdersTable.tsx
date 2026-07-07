@@ -10,14 +10,16 @@ const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'war
   quote:     'info',
   confirmed: 'success',
   active:    'success',
-  returned:  'success',
+  returned:  'purple',
+  complete:  'purple',
   cancelled: 'danger',
   overdue:   'warning',
 }
 
 const STATUS_LABEL: Partial<Record<OrderStatus, string>> = {
   active:   'Confirmed',
-  returned: 'Confirmed',
+  returned: 'Complete',
+  complete: 'Complete',
 }
 
 const FILTER_STATUSES: OrderStatus[] = ['draft', 'quote', 'confirmed', 'cancelled', 'overdue']

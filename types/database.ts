@@ -4,7 +4,7 @@ export type GhanaRegion =
   | 'Upper East' | 'Upper West' | 'Volta' | 'Western' | 'Western North'
 
 export type CustomerType = 'individual' | 'corporate' | 'planner' | 'nonprofit'
-export type OrderStatus = 'draft' | 'quote' | 'confirmed' | 'active' | 'returned' | 'cancelled' | 'overdue'
+export type OrderStatus = 'draft' | 'quote' | 'confirmed' | 'active' | 'returned' | 'complete' | 'cancelled' | 'overdue'
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired'
 export type InvoiceStatus = 'draft' | 'sent' | 'unpaid' | 'partial' | 'paid' | 'overdue' | 'void'
 export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'mtn_mobile_money' | 'vodafone_cash' | 'airteltigo_money' | 'cheque' | 'invoice_net30' | 'invoice_net60'
