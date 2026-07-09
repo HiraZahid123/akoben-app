@@ -161,6 +161,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
+          {/* Record history — traceability */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="font-semibold text-gray-800">Record History</h3>
+            <div className="text-sm space-y-1">
+              <div><span className="text-gray-500">Created:</span> <span className="text-gray-800 ml-1">{formatDateTime(order.created_at)}</span></div>
+              {order.updated_at && order.updated_at !== order.created_at && (
+                <div><span className="text-gray-500">Last Edited:</span> <span className="text-gray-800 ml-1">{formatDateTime(order.updated_at)}</span></div>
+              )}
+            </div>
+          </div>
+
           {/* Customer */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="font-semibold text-gray-800">Customer</h3>

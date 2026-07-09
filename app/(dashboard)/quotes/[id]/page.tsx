@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
-import { formatGHS, formatDate } from '@/lib/utils'
+import { formatGHS, formatDate, formatDateTime } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import QuoteActions from './QuoteActions'
 import type { QuoteStatus } from '@/types/database'
@@ -130,6 +130,17 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               {customer?.phone && <div className="text-gray-600">{customer.phone}</div>}
             </div>
             <a href={`/customers/${customer?.id}`} className="text-xs text-blue-600 hover:text-blue-700">View profile →</a>
+          </div>
+
+          {/* Record history — traceability */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="font-semibold text-gray-800">Record History</h3>
+            <div className="text-sm space-y-1">
+              <div><span className="text-gray-500">Created:</span> <span className="text-gray-800 ml-1">{formatDateTime((quote as any).created_at)}</span></div>
+              {(quote as any).updated_at && (quote as any).updated_at !== (quote as any).created_at && (
+                <div><span className="text-gray-500">Last Edited:</span> <span className="text-gray-800 ml-1">{formatDateTime((quote as any).updated_at)}</span></div>
+              )}
+            </div>
           </div>
         </div>
       </div>

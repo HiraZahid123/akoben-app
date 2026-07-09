@@ -2,12 +2,13 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
 import { formatDate } from '@/lib/utils'
+import EmailContractButton from './EmailContractButton'
 export default async function ContractsPage() {
   const supabase = await createServerSupabaseClient()
 
   const { data: orders } = await supabase
     .from('orders_with_customer')
-    .select('id, order_number, customer_name, event_name, event_date, status, created_at')
+    .select('id, order_number, customer_name, customer_email, customer_phone, event_name, event_date, status, created_at')
     .not('status', 'in', '(draft,cancelled)')
     .order('created_at', { ascending: false })
     .limit(50)
@@ -61,13 +62,21 @@ export default async function ContractsPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-3">
-                      <a
-                        href={`/api/pdf/contract/${order.id}`}
-                        target="_blank"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white text-xs font-medium rounded-lg hover:bg-gray-900 transition-colors"
-                      >
-                        📄 Download PDF
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`/api/pdf/contract/${order.id}`}
+                          target="_blank"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white text-xs font-medium rounded-lg hover:bg-gray-900 transition-colors"
+                        >
+                          📄 Download
+                        </a>
+                        <EmailContractButton
+                          orderId={order.id}
+                          orderNumber={order.order_number}
+                          customerEmail={order.customer_email}
+                          customerPhone={order.customer_phone}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import { formatDateTime } from '@/lib/utils'
+import LogWhatsAppButton from './LogWhatsAppButton'
 
 export default async function DeliveryPage() {
   const supabase = await createServerSupabaseClient()
@@ -16,43 +17,45 @@ export default async function DeliveryPage() {
   // Fetch all pull order checkout logs
   const { data: checkouts } = await supabase
     .from('barcode_scan_log')
-    .select('id, scanned_at, barcode, result, inventory_units(unit_number, inventory_items(name, sku))')
+    .select('id, scanned_at, result')
     .eq('action', 'checkout')
     .like('result', 'pull_order:%')
-    .order('scanned_at', { ascending: false })
-
-  // Fetch orders that have been pulled (for Return Order links)
-  const pulledOrderNumbers = [...new Set((checkouts ?? []).map((c: any) => (c.result ?? '').replace('pull_order:', '')))]
-  const { data: pulledOrders } = pulledOrderNumbers.length > 0
-    ? await supabase.from('orders').select('id, order_number, status').in('order_number', pulledOrderNumbers)
-    : { data: [] }
 
   const { data: checkins } = await supabase
     .from('barcode_scan_log')
-    .select('id, scanned_at, barcode, result, inventory_units(unit_number, inventory_items(name, sku))')
+    .select('id, scanned_at, result')
     .eq('action', 'checkin')
-    .order('scanned_at', { ascending: false })
 
   // Group checkouts by order number
-  const outByOrder: Record<string, any[]> = {}
+  const outByOrder: Record<string, { count: number; lastScanned: string }> = {}
   for (const entry of checkouts ?? []) {
     const orderNum = (entry.result ?? '').replace('pull_order:', '')
-    if (!outByOrder[orderNum]) outByOrder[orderNum] = []
-    outByOrder[orderNum].push(entry)
+    if (!outByOrder[orderNum]) outByOrder[orderNum] = { count: 0, lastScanned: entry.scanned_at }
+    outByOrder[orderNum].count += 1
+    if (entry.scanned_at > outByOrder[orderNum].lastScanned) outByOrder[orderNum].lastScanned = entry.scanned_at
   }
 
   // Group check-ins by order number (result format: "return_order:ORD-XXXX:condition")
-  const inByOrder: Record<string, number> = {}
+  const inByOrder: Record<string, { count: number; lastScanned: string }> = {}
   for (const entry of checkins ?? []) {
     const match = /^return_order:([^:]+):/.exec(entry.result ?? '')
     if (!match) continue
     const orderNum = match[1]
-    inByOrder[orderNum] = (inByOrder[orderNum] ?? 0) + 1
+    if (!inByOrder[orderNum]) inByOrder[orderNum] = { count: 0, lastScanned: entry.scanned_at }
+    inByOrder[orderNum].count += 1
+    if (entry.scanned_at > inByOrder[orderNum].lastScanned) inByOrder[orderNum].lastScanned = entry.scanned_at
   }
 
-  const orderNumbers = Object.keys(outByOrder).sort().reverse()
-  const orderIdByNumber: Record<string, string> = {}
-  for (const o of pulledOrders ?? []) orderIdByNumber[o.order_number] = o.id
+  const pulledOrderNumbers = Object.keys(outByOrder).sort().reverse()
+  const returnedOrderNumbers = Object.keys(inByOrder).sort().reverse()
+
+  // Fetch customer phone/name for all orders referenced in either log, for WhatsApp sends
+  const allOrderNumbers = [...new Set([...pulledOrderNumbers, ...returnedOrderNumbers])]
+  const { data: orderContacts } = allOrderNumbers.length > 0
+    ? await supabase.from('orders_with_customer').select('order_number, customer_name, customer_phone, event_name').in('order_number', allOrderNumbers)
+    : { data: [] }
+  const contactByOrder: Record<string, any> = {}
+  for (const o of orderContacts ?? []) contactByOrder[o.order_number] = o
 
   // Orders that are booked but not yet pulled (no checkout log for them yet)
   const readyForPull = (bookedOrders ?? []).filter(o => !outByOrder[o.order_number])
@@ -102,112 +105,111 @@ export default async function DeliveryPage() {
           )}
         </div>
 
-        {/* Check-Out Logs */}
-        <div>
-          <h2 className="text-base font-semibold text-gray-800 mb-4">Check-Out Logs (Pull Orders)</h2>
-          {orderNumbers.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400 text-sm">
-              No pull orders logged yet. Use the Pull Order button on a confirmed invoice.
-            </div>
+        {/* Pull Order Log — collapsible so it doesn't crowd the page with many orders */}
+        <details className="bg-white rounded-xl border border-gray-200 overflow-hidden group" open={pulledOrderNumbers.length <= 5}>
+          <summary className="cursor-pointer px-5 py-4 bg-gray-50 flex items-center justify-between select-none list-none">
+            <span className="font-semibold text-gray-800 flex items-center gap-2">
+              📦 Pull Order Log
+              <span className="text-xs font-normal text-gray-400">({pulledOrderNumbers.length} order{pulledOrderNumbers.length === 1 ? '' : 's'})</span>
+            </span>
+            <span className="text-gray-400 text-sm group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          {pulledOrderNumbers.length === 0 ? (
+            <p className="px-5 py-8 text-center text-gray-400 text-sm">No pull orders logged yet.</p>
           ) : (
-            <div className="space-y-4">
-              {orderNumbers.map(orderNum => (
-                <div key={orderNum} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                    <span className="font-semibold text-gray-800">{orderNum}-out</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-gray-400">{outByOrder[orderNum].length} items checked out</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        (inByOrder[orderNum] ?? 0) >= outByOrder[orderNum].length ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {inByOrder[orderNum] ?? 0} items returned
-                      </span>
-                      {orderIdByNumber[orderNum] && (
-                        <a href={`/delivery/return/${orderIdByNumber[orderNum]}`}
-                          className="text-xs px-2 py-1 bg-orange-100 text-orange-700 font-medium rounded hover:bg-orange-200 transition-colors">
-                          📥 Return Order
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-100 text-left">
-                        <th className="px-5 py-2 font-medium text-gray-500 text-xs">Date/Time</th>
-                        <th className="px-5 py-2 font-medium text-gray-500 text-xs">Item</th>
-                        <th className="px-5 py-2 font-medium text-gray-500 text-xs">SKU</th>
-                        <th className="px-5 py-2 font-medium text-gray-500 text-xs">Unit #</th>
-                        <th className="px-5 py-2 font-medium text-gray-500 text-xs">Barcode</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {outByOrder[orderNum].map((entry: any) => (
-                        <tr key={entry.id}>
-                          <td className="px-5 py-2 text-gray-500">{formatDateTime(entry.scanned_at)}</td>
-                          <td className="px-5 py-2 text-gray-900 font-medium">{entry.inventory_units?.inventory_items?.name ?? '—'}</td>
-                          <td className="px-5 py-2 text-gray-500 text-xs">{entry.inventory_units?.inventory_items?.sku ?? '—'}</td>
-                          <td className="px-5 py-2 text-gray-600">{entry.inventory_units?.unit_number ?? '—'}</td>
-                          <td className="px-5 py-2 text-gray-400 font-mono text-xs">{entry.barcode}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
-            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-t border-b border-gray-100 text-left">
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Order</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Customer</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Items Out</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Returned</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Last Scan</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {pulledOrderNumbers.map(orderNum => {
+                  const contact = contactByOrder[orderNum]
+                  const message = `Pull Order — ${orderNum}\n${contact?.event_name ?? ''}\n\nPlease see the attached pull order log link on the portal for the full item list.\nTotal items out: ${outByOrder[orderNum].count}`
+                  return (
+                    <tr key={orderNum}>
+                      <td className="px-5 py-3 font-medium text-gray-900">{orderNum}</td>
+                      <td className="px-5 py-3 text-gray-600">{contact?.customer_name ?? '—'}</td>
+                      <td className="px-5 py-3 text-gray-700">{outByOrder[orderNum].count}</td>
+                      <td className="px-5 py-3">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          (inByOrder[orderNum]?.count ?? 0) >= outByOrder[orderNum].count ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {inByOrder[orderNum]?.count ?? 0} returned
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-gray-500 text-xs">{formatDateTime(outByOrder[orderNum].lastScanned)}</td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <a href={`/delivery/log/pull/${encodeURIComponent(orderNum)}`}
+                            className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 font-medium rounded hover:bg-blue-200 transition-colors">
+                            🖨 View / Print
+                          </a>
+                          <LogWhatsAppButton phone={contact?.customer_phone ?? null} message={message} label="Send" />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           )}
-        </div>
+        </details>
 
-        {/* Check-In Logs */}
-        <div>
-          <h2 className="text-base font-semibold text-gray-800 mb-4">Check-In Logs (Returns)</h2>
-          {(checkins ?? []).length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
-              No check-ins recorded yet.
-            </div>
+        {/* Return Order Log — collapsible */}
+        <details className="bg-white rounded-xl border border-gray-200 overflow-hidden group" open={returnedOrderNumbers.length <= 5}>
+          <summary className="cursor-pointer px-5 py-4 bg-gray-50 flex items-center justify-between select-none list-none">
+            <span className="font-semibold text-gray-800 flex items-center gap-2">
+              📥 Return Order Log
+              <span className="text-xs font-normal text-gray-400">({returnedOrderNumbers.length} order{returnedOrderNumbers.length === 1 ? '' : 's'})</span>
+            </span>
+            <span className="text-gray-400 text-sm group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          {returnedOrderNumbers.length === 0 ? (
+            <p className="px-5 py-8 text-center text-gray-400 text-sm">No returns logged yet.</p>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 font-semibold text-gray-800">
-                All Check-Ins
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left">
-                    <th className="px-5 py-2 font-medium text-gray-500 text-xs">Date/Time</th>
-                    <th className="px-5 py-2 font-medium text-gray-500 text-xs">Order</th>
-                    <th className="px-5 py-2 font-medium text-gray-500 text-xs">Item</th>
-                    <th className="px-5 py-2 font-medium text-gray-500 text-xs">Unit #</th>
-                    <th className="px-5 py-2 font-medium text-gray-500 text-xs">Result</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {checkins?.map((entry: any) => {
-                    const match = /^return_order:([^:]+):(.+)$/.exec(entry.result ?? '')
-                    const orderNum = match?.[1] ?? '—'
-                    const condition = match?.[2] ?? entry.result ?? 'returned'
-                    return (
-                      <tr key={entry.id}>
-                        <td className="px-5 py-2 text-gray-500">{formatDateTime(entry.scanned_at)}</td>
-                        <td className="px-5 py-2 text-gray-700 font-medium">{orderNum}</td>
-                        <td className="px-5 py-2 text-gray-900 font-medium">{entry.inventory_units?.inventory_items?.name ?? entry.barcode}</td>
-                        <td className="px-5 py-2 text-gray-600">{entry.inventory_units?.unit_number ?? '—'}</td>
-                        <td className="px-5 py-2">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                            condition === 'success' ? 'bg-green-100 text-green-700' :
-                            condition === 'damaged' ? 'bg-red-100 text-red-700' :
-                            'bg-amber-100 text-amber-700'
-                          }`}>
-                            {condition}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-t border-b border-gray-100 text-left">
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Order</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Customer</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Items Returned</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs">Last Scan</th>
+                  <th className="px-5 py-2 font-medium text-gray-500 text-xs text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {returnedOrderNumbers.map(orderNum => {
+                  const contact = contactByOrder[orderNum]
+                  const message = `Return Order — ${orderNum}\n${contact?.event_name ?? ''}\n\nTotal items returned: ${inByOrder[orderNum].count}`
+                  return (
+                    <tr key={orderNum}>
+                      <td className="px-5 py-3 font-medium text-gray-900">{orderNum}</td>
+                      <td className="px-5 py-3 text-gray-600">{contact?.customer_name ?? '—'}</td>
+                      <td className="px-5 py-3 text-gray-700">{inByOrder[orderNum].count}</td>
+                      <td className="px-5 py-3 text-gray-500 text-xs">{formatDateTime(inByOrder[orderNum].lastScanned)}</td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <a href={`/delivery/log/return/${encodeURIComponent(orderNum)}`}
+                            className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 font-medium rounded hover:bg-blue-200 transition-colors">
+                            🖨 View / Print
+                          </a>
+                          <LogWhatsAppButton phone={contact?.customer_phone ?? null} message={message} label="Send" />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           )}
-        </div>
+        </details>
       </div>
     </div>
   )

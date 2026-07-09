@@ -4,6 +4,7 @@ import { formatGHS, formatDate, formatDateTime } from '@/lib/utils'
 import { getCurrentUserRole } from '@/lib/auth-role'
 import { getModuleAccess } from '@/lib/permissions'
 import PrintButton from './PrintButton'
+import EmailReportButton from './EmailReportButton'
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
@@ -46,6 +47,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   let invoices: any[] = []
   let inventoryRows: { name: string; sku: string | null; totalQty: number; orderCount: number }[] = []
   let auditRows: { name: string; category: string | null; location: string | null; available: number }[] = []
+  let partialPayments: any[] = []
+  let fullPayments: any[] = []
+  let overridePayments: any[] = []
+  let completedOrders: any[] = []
 
   if (reportType === 'revenue') {
     const [p, o] = await Promise.all([
@@ -121,6 +126,42 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         ? item.quantity_total - (outCountByItem[item.id] ?? 0)
         : item.quantity_total,
     }))
+  } else if (reportType === 'partial') {
+    const { data } = await supabase
+      .from('invoices')
+      .select('*, customers(full_name), orders(order_number)')
+      .eq('status', 'partial')
+      .gte('created_at', `${startDate}T00:00:00`)
+      .lte('created_at', `${endDate}T23:59:59`)
+      .order('created_at')
+    invoices = data ?? []
+  } else if (reportType === 'full') {
+    const { data } = await supabase
+      .from('invoices')
+      .select('*, customers(full_name), orders(order_number)')
+      .eq('status', 'paid')
+      .gte('created_at', `${startDate}T00:00:00`)
+      .lte('created_at', `${endDate}T23:59:59`)
+      .order('created_at')
+    invoices = data ?? []
+  } else if (reportType === 'override') {
+    const { data } = await supabase
+      .from('payments')
+      .select('*, orders(order_number, event_name), customers(full_name)')
+      .eq('method', 'override_50')
+      .gte('created_at', `${startDate}T00:00:00`)
+      .lte('created_at', `${endDate}T23:59:59`)
+      .order('created_at')
+    overridePayments = data ?? []
+  } else if (reportType === 'completed') {
+    const { data } = await supabase
+      .from('orders_with_customer')
+      .select('*')
+      .eq('status', 'complete')
+      .gte('updated_at', `${startDate}T00:00:00`)
+      .lte('updated_at', `${endDate}T23:59:59`)
+      .order('updated_at')
+    completedOrders = data ?? []
   }
 
   const totalRevenue = payments.reduce((s, p) => s + (p.amount ?? 0), 0)
@@ -210,6 +251,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               { key: 'orders', label: '📋 Orders' },
               { key: 'inventory', label: '📦 Frequent Inventory' },
               { key: 'audit', label: '📋 Inventory Audit' },
+              { key: 'partial', label: '🟠 Partial Payments' },
+              { key: 'full', label: '✅ Full Payments' },
+              { key: 'override', label: '⚠ Override Payments' },
+              { key: 'completed', label: '🏁 Completed Orders' },
             ].map(r => (
               <a key={r.key} href={`/reports?${periodQuery}&report=${r.key}`}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${reportType === r.key ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -422,6 +467,184 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                       <td className="px-5 py-3 text-center">
                         <div className="w-20 h-6 border-b border-gray-300 mx-auto" />
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* Partial Payments report */}
+        {reportType === 'partial' && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <span className="font-semibold text-gray-800">Partial Payments Report — {periodLabel}</span>
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Partial Payments Report" subtitle={periodLabel}
+                  columns={['Invoice #', 'Customer', 'Order', 'Total', 'Balance']}
+                  rows={invoices.map((inv: any) => [inv.invoice_number, inv.customers?.full_name ?? '—', inv.orders?.order_number ?? '—', formatGHS(inv.total), formatGHS(inv.balance_due)])}
+                />
+                <PrintButton />
+              </div>
+            </div>
+            {invoices.length === 0 ? (
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">No partially paid invoices in this period.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-left print:bg-white">
+                    <th className="px-5 py-3 font-medium text-gray-600">Invoice #</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Customer</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Order</th>
+                    <th className="px-5 py-3 font-medium text-gray-600 text-right">Total</th>
+                    <th className="px-5 py-3 font-medium text-gray-600 text-right">Balance</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {invoices.map((inv: any) => (
+                    <tr key={inv.id}>
+                      <td className="px-5 py-3 font-medium text-gray-900">
+                        <a href={`/invoices/${inv.id}`} className="text-blue-600 hover:text-blue-700">{inv.invoice_number}</a>
+                      </td>
+                      <td className="px-5 py-3 text-gray-700">{inv.customers?.full_name ?? '—'}</td>
+                      <td className="px-5 py-3 text-gray-600">{inv.orders?.order_number ?? '—'}</td>
+                      <td className="px-5 py-3 text-right font-medium">{formatGHS(inv.total)}</td>
+                      <td className="px-5 py-3 text-right font-medium text-amber-600">{formatGHS(inv.balance_due)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* Full Payment report */}
+        {reportType === 'full' && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <span className="font-semibold text-gray-800">Full Payment Report — {periodLabel}</span>
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Full Payment Report" subtitle={periodLabel}
+                  columns={['Invoice #', 'Customer', 'Order', 'Total', 'Paid At']}
+                  rows={invoices.map((inv: any) => [inv.invoice_number, inv.customers?.full_name ?? '—', inv.orders?.order_number ?? '—', formatGHS(inv.total), inv.paid_at ? formatDateTime(inv.paid_at) : '—'])}
+                />
+                <PrintButton />
+              </div>
+            </div>
+            {invoices.length === 0 ? (
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">No fully paid invoices in this period.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-left print:bg-white">
+                    <th className="px-5 py-3 font-medium text-gray-600">Invoice #</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Customer</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Order</th>
+                    <th className="px-5 py-3 font-medium text-gray-600 text-right">Total</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Paid At</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {invoices.map((inv: any) => (
+                    <tr key={inv.id}>
+                      <td className="px-5 py-3 font-medium text-gray-900">
+                        <a href={`/invoices/${inv.id}`} className="text-blue-600 hover:text-blue-700">{inv.invoice_number}</a>
+                      </td>
+                      <td className="px-5 py-3 text-gray-700">{inv.customers?.full_name ?? '—'}</td>
+                      <td className="px-5 py-3 text-gray-600">{inv.orders?.order_number ?? '—'}</td>
+                      <td className="px-5 py-3 text-right font-medium text-green-600">{formatGHS(inv.total)}</td>
+                      <td className="px-5 py-3 text-gray-500 text-xs">{inv.paid_at ? formatDateTime(inv.paid_at) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* Override Payments report */}
+        {reportType === 'override' && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <span className="font-semibold text-gray-800">Override Payments Report — {periodLabel}</span>
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Override Payments Report" subtitle={periodLabel}
+                  columns={['Date', 'Customer', 'Order', 'Amount', 'Reference']}
+                  rows={overridePayments.map((p: any) => [formatDateTime(p.created_at), p.customers?.full_name ?? '—', p.orders?.order_number ?? '—', formatGHS(p.amount), p.reference ?? '—'])}
+                />
+                <PrintButton />
+              </div>
+            </div>
+            {overridePayments.length === 0 ? (
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">No override payments in this period.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-left print:bg-white">
+                    <th className="px-5 py-3 font-medium text-gray-600">Date</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Customer</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Order</th>
+                    <th className="px-5 py-3 font-medium text-gray-600 text-right">Amount</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Reference</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {overridePayments.map((p: any) => (
+                    <tr key={p.id}>
+                      <td className="px-5 py-3 text-gray-600">{formatDateTime(p.created_at)}</td>
+                      <td className="px-5 py-3 text-gray-800 font-medium">{p.customers?.full_name ?? '—'}</td>
+                      <td className="px-5 py-3 text-gray-600">{p.orders?.order_number ?? '—'}</td>
+                      <td className="px-5 py-3 text-right font-semibold text-amber-600">{formatGHS(p.amount)}</td>
+                      <td className="px-5 py-3 text-gray-400 text-xs">{p.reference ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* Completed Order report */}
+        {reportType === 'completed' && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <span className="font-semibold text-gray-800">Completed Order Report — {periodLabel}</span>
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Completed Order Report" subtitle={periodLabel}
+                  columns={['Order #', 'Customer', 'Event', 'Total', 'Completed']}
+                  rows={completedOrders.map((o: any) => [o.order_number, o.customer_name, o.event_name, formatGHS(o.total), formatDateTime(o.updated_at)])}
+                />
+                <PrintButton />
+              </div>
+            </div>
+            {completedOrders.length === 0 ? (
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">No completed orders in this period.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-left print:bg-white">
+                    <th className="px-5 py-3 font-medium text-gray-600">Order #</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Customer</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Event</th>
+                    <th className="px-5 py-3 font-medium text-gray-600 text-right">Total</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Completed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {completedOrders.map((o: any) => (
+                    <tr key={o.id}>
+                      <td className="px-5 py-3 font-medium text-gray-900">
+                        <a href={`/orders/${o.id}`} className="text-blue-600 hover:text-blue-700">{o.order_number}</a>
+                      </td>
+                      <td className="px-5 py-3 text-gray-700">{o.customer_name}</td>
+                      <td className="px-5 py-3 text-gray-600">{o.event_name}</td>
+                      <td className="px-5 py-3 text-right font-medium">{formatGHS(o.total)}</td>
+                      <td className="px-5 py-3 text-gray-500 text-xs">{formatDateTime(o.updated_at)}</td>
                     </tr>
                   ))}
                 </tbody>
