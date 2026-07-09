@@ -2,20 +2,32 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import { formatGHS, formatDate, formatDateTime } from '@/lib/utils'
 import { getCurrentUserRole } from '@/lib/auth-role'
-import { getModuleAccess } from '@/lib/permissions'
+import { getAllowedReportTypes, DAILY_ONLY_REVENUE_ROLES, type ReportType } from '@/lib/permissions'
 import PrintButton from './PrintButton'
 import EmailReportButton from './EmailReportButton'
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
+const REPORT_TAB_LABELS: Record<ReportType, string> = {
+  revenue: '💰 Payment Report',
+  invoices: '🧾 Invoices',
+  orders: '📋 Orders',
+  inventory: '📦 Frequent Inventory',
+  audit: '📋 Inventory Audit',
+  partial: '🟠 Partial Payments',
+  full: '✅ Full Payments',
+  override: '⚠ Override Payments',
+  completed: '🏁 Completed Orders',
+}
+
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ type?: string; report?: string; date?: string; month?: string; year?: string; from?: string; to?: string }> }) {
   const sp = await searchParams
   const role = await getCurrentUserRole()
-  // Set-Up/Breakdown Crew and Driver have 'limited' Reports access — inventory pulled/returned reports only
-  const reportsAccess = getModuleAccess(role, 'reports')
-  const inventoryOnly = reportsAccess === 'limited'
-  const type = sp.type ?? 'daily'
-  const reportType = inventoryOnly ? 'inventory' : (sp.report ?? 'revenue')
+  const allowedReports = getAllowedReportTypes(role)
+  const dailyOnly = DAILY_ONLY_REVENUE_ROLES.includes(role)
+  const requestedReport = (sp.report ?? allowedReports[0]) as ReportType
+  const reportType: ReportType = allowedReports.includes(requestedReport) ? requestedReport : allowedReports[0]
+  const type = dailyOnly ? 'daily' : (sp.type ?? 'daily')
   const supabase = await createServerSupabaseClient()
 
   const now = new Date()
@@ -184,15 +196,20 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               className={`px-4 py-2 text-sm font-medium transition-colors ${type === 'daily' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
               Daily
             </a>
-            <a href={`/reports?report=${reportType}&type=range&from=${fromDate}&to=${toDate}`}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${type === 'range' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-              Custom Range
-            </a>
-            <a href={`/reports?report=${reportType}&type=monthly&month=${selectedMonth}&year=${selectedYear}`}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${type === 'monthly' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-              Monthly
-            </a>
+            {!dailyOnly && (
+              <>
+                <a href={`/reports?report=${reportType}&type=range&from=${fromDate}&to=${toDate}`}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${type === 'range' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  Custom Range
+                </a>
+                <a href={`/reports?report=${reportType}&type=monthly&month=${selectedMonth}&year=${selectedYear}`}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${type === 'monthly' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  Monthly
+                </a>
+              </>
+            )}
           </div>
+          {dailyOnly && <p className="text-xs text-gray-400 self-center">Your role has daily-only report access.</p>}
 
           {type === 'daily' && (
             <form method="get">
@@ -240,25 +257,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           )}
         </div>
 
-        {/* Report type selector — Crew/Driver only get the inventory report per their 'limited' Reports access */}
-        {inventoryOnly ? (
-          <p className="text-xs text-gray-400">Showing inventory pulled/returned report only, per your role's Reports access.</p>
-        ) : (
-          <div className="print:hidden flex bg-white border border-gray-200 rounded-lg overflow-hidden w-fit">
-            {[
-              { key: 'revenue', label: '💰 Revenue' },
-              { key: 'invoices', label: '🧾 Invoices' },
-              { key: 'orders', label: '📋 Orders' },
-              { key: 'inventory', label: '📦 Frequent Inventory' },
-              { key: 'audit', label: '📋 Inventory Audit' },
-              { key: 'partial', label: '🟠 Partial Payments' },
-              { key: 'full', label: '✅ Full Payments' },
-              { key: 'override', label: '⚠ Override Payments' },
-              { key: 'completed', label: '🏁 Completed Orders' },
-            ].map(r => (
-              <a key={r.key} href={`/reports?${periodQuery}&report=${r.key}`}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${reportType === r.key ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-                {r.label}
+        {/* Report type selector — tabs filtered to what this role is allowed to see */}
+        {allowedReports.length > 1 && (
+          <div className="print:hidden flex bg-white border border-gray-200 rounded-lg overflow-hidden w-fit flex-wrap">
+            {allowedReports.map(key => (
+              <a key={key} href={`/reports?${periodQuery}&report=${key}`}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${reportType === key ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                {REPORT_TAB_LABELS[key]}
               </a>
             ))}
           </div>
@@ -286,7 +291,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">Revenue Report — {periodLabel}</div>
+              <div className="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">Payment Report — {periodLabel}</div>
               {payments.length === 0 ? (
                 <p className="px-5 py-10 text-center text-gray-400 text-sm">No payments recorded for this period.</p>
               ) : (

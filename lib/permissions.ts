@@ -93,8 +93,35 @@ export const ROLE_PERMISSIONS: Record<UserRole, ModulePermissions> = {
 // Roles a Manager is allowed to create (per Settings row: cannot add Bookkeeper/Accountant)
 export const MANAGER_CREATABLE_ROLES: UserRole[] = ['staff1', 'staff2', 'setup_crew', 'driver']
 
+export type ReportType = 'revenue' | 'invoices' | 'orders' | 'inventory' | 'audit' | 'partial' | 'full' | 'override' | 'completed'
+
+const ALL_REPORT_TYPES: ReportType[] = ['revenue', 'invoices', 'orders', 'inventory', 'audit', 'partial', 'full', 'override', 'completed']
+
+// Which report tabs each role can see under Reports — confirmed with client 2026-07-09:
+//  - Staff 1: Payment Report (daily & periodic = 'revenue'), Invoice & Orders, Frequent Inventory, Inventory (audit)
+//  - Staff 2: Daily Payment Report only (revenue, locked to daily period), Frequent Inventory, Inventory (audit)
+//  - Bookkeeper/Accountant, Manager, Admin: full report access
+//  - Set-Up/Breakdown Crew, Driver: Frequent Inventory only (their Reports access is 'limited' —
+//    inventory pulled/returned reports)
+export const ROLE_REPORT_TYPES: Record<UserRole, ReportType[]> = {
+  admin: ALL_REPORT_TYPES,
+  manager: ALL_REPORT_TYPES,
+  staff1: ['revenue', 'invoices', 'orders', 'inventory', 'audit'],
+  staff2: ['revenue', 'inventory', 'audit'],
+  bookkeeper: ALL_REPORT_TYPES,
+  setup_crew: ['inventory'],
+  driver: ['inventory'],
+}
+
+// Roles restricted to the Daily period only on the Revenue/Payment report (no Custom Range / Monthly)
+export const DAILY_ONLY_REVENUE_ROLES: UserRole[] = ['staff2']
+
 export function getModuleAccess(role: UserRole, module: keyof Omit<ModulePermissions, 'overridePrivilege'>): AccessLevel {
   return ROLE_PERMISSIONS[role]?.[module] ?? 'none'
+}
+
+export function getAllowedReportTypes(role: UserRole): ReportType[] {
+  return ROLE_REPORT_TYPES[role] ?? []
 }
 
 export function roleHasOverridePrivilege(role: UserRole): boolean {
