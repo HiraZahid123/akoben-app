@@ -5,6 +5,11 @@ const PUBLIC_PATHS = ['/login', '/api/auth']
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Public landing page — exact match only (not a prefix, or every route would be public)
+  if (pathname === '/') {
+    return NextResponse.next()
+  }
+
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
   }
