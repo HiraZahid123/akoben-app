@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/api/auth']
+const PUBLIC_PATHS = [
+  '/login',
+  '/api/auth',
+  // Contract PDF links are shared directly with customers via WhatsApp/email — they must not
+  // require a portal login. Order IDs are UUIDs, so this isn't guessable/enumerable.
+  '/api/pdf/contract',
+]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

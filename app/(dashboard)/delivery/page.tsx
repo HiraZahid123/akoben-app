@@ -151,7 +151,7 @@ export default async function DeliveryPage() {
                             className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 font-medium rounded hover:bg-blue-200 transition-colors">
                             🖨 View / Print
                           </a>
-                          <LogWhatsAppButton phone={contact?.customer_phone ?? null} message={message} label="Send" />
+                          <LogWhatsAppButton message={message} label="Send to Driver/Crew" />
                         </div>
                       </td>
                     </tr>
@@ -200,7 +200,7 @@ export default async function DeliveryPage() {
                             className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 font-medium rounded hover:bg-blue-200 transition-colors">
                             🖨 View / Print
                           </a>
-                          <LogWhatsAppButton phone={contact?.customer_phone ?? null} message={message} label="Send" />
+                          <LogWhatsAppButton message={message} label="Send to Driver/Crew" />
                         </div>
                       </td>
                     </tr>

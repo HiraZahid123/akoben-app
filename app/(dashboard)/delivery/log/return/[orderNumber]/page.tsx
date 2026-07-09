@@ -52,7 +52,7 @@ export default async function ReturnOrderLogPage({ params }: { params: Promise<{
               <span className="text-sm text-gray-400 ml-3">{entries.length} item(s)</span>
             </div>
             <div className="print:hidden flex items-center gap-2">
-              <LogWhatsAppButton phone={order?.customer_phone ?? null} message={message} label="Send to Driver/Crew" />
+              <LogWhatsAppButton message={message} label="Send to Driver/Crew" />
               <PrintButton />
             </div>
           </div>

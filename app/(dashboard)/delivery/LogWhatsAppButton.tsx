@@ -1,15 +1,18 @@
 'use client'
 
 interface Props {
-  phone: string | null
+  // Kept for backwards compatibility but intentionally unused as a default —
+  // this button sends to a driver/crew member, not the customer on file.
+  phone?: string | null
   message: string
   label?: string
 }
 
-export default function LogWhatsAppButton({ phone, message, label = 'WhatsApp' }: Props) {
+export default function LogWhatsAppButton({ message, label = 'WhatsApp' }: Props) {
   function send() {
-    if (!phone) { alert('No phone number on file to send this to'); return }
-    const cleaned = phone.replace(/\D/g, '').replace(/^0/, '233')
+    const input = prompt('Send to which driver/crew phone number? (e.g. 024 000 0000)')
+    if (!input) return
+    const cleaned = input.replace(/\D/g, '').replace(/^0/, '233')
     window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`, '_blank')
   }
 
