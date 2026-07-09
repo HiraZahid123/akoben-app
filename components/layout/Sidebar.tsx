@@ -29,7 +29,7 @@ export default function Sidebar({ role = 'staff1' }: { role?: UserRole }) {
   const navItems = NAV_ITEMS.filter(item => permissions[item.module] !== 'none')
 
   return (
-    <aside className="w-60 bg-[#0f172a] text-white flex flex-col shrink-0">
+    <aside className="print:hidden w-60 bg-[#0f172a] text-white flex flex-col shrink-0">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">

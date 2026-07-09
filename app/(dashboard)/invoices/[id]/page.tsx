@@ -23,19 +23,22 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const [r1, r2] = await Promise.all([
+  const [r1, r2, r3] = await Promise.all([
     supabase.from('invoices')
       .select('*, customers(id, full_name, company_name, email, phone), orders(id, order_number, event_name, is_booked, order_items(*, inventory_items(name)))')
       .eq('id', id).single(),
     supabase.from('payments').select('*').eq('invoice_id', id).order('created_at'),
+    supabase.from('business_settings').select('momo_payment_number').limit(1).maybeSingle(),
   ])
 
   if (!r1.data) notFound()
   const invoice = r1.data as any
   const payments = (r2.data ?? []) as any[]
+  const momoNumber = r3.data?.momo_payment_number ?? null
   const customer = invoice.customers
   const order = invoice.orders
   const orderItems = order?.order_items ?? []
+  const emailLineItems = orderItems.map((oi: any) => ({ name: oi.inventory_items?.name ?? 'Item', quantity: oi.quantity, lineTotal: oi.line_total }))
 
   return (
     <div>
@@ -54,6 +57,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             total={invoice.total}
             balanceDue={invoice.balance_due}
             dueDate={formatDate(invoice.due_date)}
+            items={emailLineItems}
+            momoNumber={momoNumber}
           />
         }
       />

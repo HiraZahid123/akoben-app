@@ -5,7 +5,7 @@ import InventoryTable from './InventoryTable'
 export default async function InventoryPage() {
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: items }, { data: categories }] = await Promise.all([
+  const [{ data: items }, { data: categories }, { data: units }] = await Promise.all([
     supabase
       .from('inventory_availability')
       .select('*')
@@ -14,13 +14,32 @@ export default async function InventoryPage() {
       .from('inventory_categories')
       .select('*')
       .order('sort_order'),
+    supabase
+      .from('inventory_units')
+      .select('item_id, status'),
   ])
+
+  // Inventory tab must always reflect PHYSICAL stock on the shelf today — not future date-range
+  // reservations. quantity_available gets decremented by a DB trigger for any order regardless
+  // of date, so we override it here with quantity_total minus units currently checked out.
+  const outCountByItem: Record<string, number> = {}
+  const itemsWithUnits = new Set<string>()
+  for (const u of units ?? []) {
+    itemsWithUnits.add(u.item_id)
+    if (u.status === 'out') outCountByItem[u.item_id] = (outCountByItem[u.item_id] ?? 0) + 1
+  }
+  const physicalItems = (items ?? []).map(item => ({
+    ...item,
+    quantity_available: itemsWithUnits.has(item.id)
+      ? item.quantity_total - (outCountByItem[item.id] ?? 0)
+      : item.quantity_total, // no unit tracking yet — assume nothing physically out
+  }))
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader
         title="Inventory"
-        subtitle={`${items?.length ?? 0} items`}
+        subtitle={`${physicalItems.length} items`}
         action={
           <a
             href="/inventory/new"
@@ -31,7 +50,7 @@ export default async function InventoryPage() {
         }
       />
       <div className="flex-1 overflow-auto p-6">
-        <InventoryTable items={items ?? []} categories={categories ?? []} />
+        <InventoryTable items={physicalItems} categories={categories ?? []} />
       </div>
     </div>
   )

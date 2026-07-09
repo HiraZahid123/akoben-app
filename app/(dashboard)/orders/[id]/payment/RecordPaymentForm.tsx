@@ -94,7 +94,8 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
         }
 
         if (isOverride) {
-          await fetch('/api/send-email', {
+          // Fire-and-forget — don't block the save on the email round-trip
+          fetch('/api/send-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

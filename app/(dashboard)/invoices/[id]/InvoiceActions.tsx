@@ -7,6 +7,8 @@ import { invoiceEmailHtml } from '@/lib/email-client'
 import { useToast } from '@/components/ui/ToastProvider'
 import type { InvoiceStatus } from '@/types/database'
 
+interface InvoiceLineItem { name: string; quantity: number; lineTotal: number }
+
 interface Props {
   invoiceId: string
   orderId: string
@@ -18,10 +20,12 @@ interface Props {
   total: number
   dueDate: string
   balanceDue?: number
+  items?: InvoiceLineItem[]
+  momoNumber?: string | null
 }
 
 // Header actions only — Email Invoice, WhatsApp, Send Payment Link, PDF
-export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue }: Props) {
+export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue, items = [], momoNumber }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
@@ -30,7 +34,11 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
     if (!customerPhone) { toastError('No phone number on file for this customer'); return }
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
     const amount = balanceDue ?? total
-    const msg = `Hello ${customerName}, your invoice *${invoiceNumber}* from Akoben Event Rentals is ready.\n\nBalance Due: GHS ${amount.toFixed(2)}\nDue Date: ${dueDate}\n\nPlease make payment at your earliest convenience. Thank you!`
+    const itemLines = items.length > 0
+      ? '\n' + items.map(i => `• ${i.name} x${i.quantity} — GHS ${i.lineTotal.toFixed(2)}`).join('\n') + '\n'
+      : ''
+    const paymentLine = momoNumber ? `\nPlease use this MoMo number to make a payment: ${momoNumber}` : ''
+    const msg = `Hello ${customerName}, your invoice *${invoiceNumber}* from Akoben Event Rentals is ready.\n${itemLines}\nBalance Due: GHS ${amount.toFixed(2)}\nDue Date: ${dueDate}\n\nPlease make payment at your earliest convenience.${paymentLine}\n\nThank you!`
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -70,7 +78,7 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
         body: JSON.stringify({
           to: customerEmail,
           subject: `Invoice ${invoiceNumber} — Akoben Event Rentals`,
-          html: invoiceEmailHtml({ customerName, invoiceNumber, total: balanceDue ?? total, dueDate }),
+          html: invoiceEmailHtml({ customerName, invoiceNumber, total: balanceDue ?? total, dueDate, items, momoNumber: momoNumber ?? undefined }),
         }),
       })
       if (res.ok) {

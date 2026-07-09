@@ -37,7 +37,30 @@ export function invoiceEmailHtml(params: {
   total: number
   dueDate: string
   paystackLink?: string
+  items?: { name: string; quantity: number; lineTotal: number }[]
+  momoNumber?: string
 }) {
+  const itemsHtml = params.items && params.items.length > 0 ? `
+    <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0;text-align:left;">
+          <th style="padding:8px 0;">Item</th>
+          <th style="padding:8px 0;text-align:center;">Qty</th>
+          <th style="padding:8px 0;text-align:right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${params.items.map(i => `
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px 0;">${i.name}</td>
+            <td style="padding:8px 0;text-align:center;">${i.quantity}</td>
+            <td style="padding:8px 0;text-align:right;">₵${i.lineTotal.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  ` : ''
+
   return `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
       <div style="background:#0f172a;padding:24px;text-align:center;">
@@ -49,10 +72,12 @@ export function invoiceEmailHtml(params: {
         <p>Your invoice is ready. Please see the details below.</p>
         <div style="background:#f8fafc;border-radius:8px;padding:20px;margin:24px 0;border:1px solid #e2e8f0;">
           <p style="margin:0;"><strong>Invoice:</strong> ${params.invoiceNumber}</p>
+          ${itemsHtml}
           <p style="margin:8px 0 0;"><strong>Amount Due:</strong> ₵${params.total.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</p>
           <p style="margin:8px 0 0;"><strong>Due Date:</strong> ${params.dueDate}</p>
         </div>
         <p><strong>Pay via:</strong> MTN Mobile Money, Vodafone Cash, Bank Transfer, or Cash on pickup.</p>
+        ${params.momoNumber ? `<p><strong>Please use this MoMo number to make a payment:</strong> ${params.momoNumber}</p>` : ''}
         ${params.paystackLink ? `
         <div style="text-align:center;margin:32px 0;">
           <a href="${params.paystackLink}" style="background:#00c3f7;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;">Pay Online Now</a>

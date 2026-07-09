@@ -24,6 +24,11 @@ export default async function InventoryDetailPage({ params }: { params: Promise<
   const item = r1.data as any
   const units = (r2.data ?? []) as any[]
 
+  // Physical stock on the shelf today — quantity_total minus units currently checked out.
+  // Ignores future date-range reservations (those only affect the Orders tab).
+  const outCount = units.filter(u => u.status === 'out').length
+  const physicalAvailable = units.length > 0 ? item.quantity_total - outCount : item.quantity_total
+
   return (
     <div>
       <PageHeader
@@ -89,7 +94,7 @@ export default async function InventoryDetailPage({ params }: { params: Promise<
               </div>
               <div className="flex justify-between text-green-600">
                 <span>Available</span>
-                <span className="font-medium">{item.quantity_available ?? 0}</span>
+                <span className="font-medium">{physicalAvailable}</span>
               </div>
               <div className="flex justify-between text-gray-700">
                 <span className="text-gray-400">Condition</span>

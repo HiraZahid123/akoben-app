@@ -3,6 +3,7 @@ import PageHeader from '@/components/layout/PageHeader'
 import { formatGHS, formatDate, formatDateTime } from '@/lib/utils'
 import { getCurrentUserRole } from '@/lib/auth-role'
 import { getModuleAccess } from '@/lib/permissions'
+import PrintButton from './PrintButton'
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
@@ -44,6 +45,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   let orders: any[] = []
   let invoices: any[] = []
   let inventoryRows: { name: string; sku: string | null; totalQty: number; orderCount: number }[] = []
+  let auditRows: { name: string; category: string | null; location: string | null; available: number }[] = []
 
   if (reportType === 'revenue') {
     const [p, o] = await Promise.all([
@@ -100,6 +102,25 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         .map(a => ({ name: a.name, sku: a.sku, totalQty: a.totalQty, orderCount: a.orderIds.size }))
         .sort((a, b) => b.totalQty - a.totalQty)
     }
+  } else if (reportType === 'audit') {
+    const [{ data: items }, { data: units }] = await Promise.all([
+      supabase.from('inventory_items').select('id, name, quantity_total, location, inventory_categories(name)').order('name'),
+      supabase.from('inventory_units').select('item_id, status'),
+    ])
+    const outCountByItem: Record<string, number> = {}
+    const itemsWithUnits = new Set<string>()
+    for (const u of units ?? []) {
+      itemsWithUnits.add(u.item_id)
+      if (u.status === 'out') outCountByItem[u.item_id] = (outCountByItem[u.item_id] ?? 0) + 1
+    }
+    auditRows = (items ?? []).map((item: any) => ({
+      name: item.name,
+      category: item.inventory_categories?.name ?? null,
+      location: item.location ?? null,
+      available: itemsWithUnits.has(item.id)
+        ? item.quantity_total - (outCountByItem[item.id] ?? 0)
+        : item.quantity_total,
+    }))
   }
 
   const totalRevenue = payments.reduce((s, p) => s + (p.amount ?? 0), 0)
@@ -116,7 +137,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       <div className="flex-1 overflow-auto p-6 space-y-6">
 
         {/* Period type selector */}
-        <div className="flex gap-3 items-end flex-wrap">
+        <div className="print:hidden flex gap-3 items-end flex-wrap">
           <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
             <a href={`/reports?report=${reportType}&type=daily&date=${selectedDate}`}
               className={`px-4 py-2 text-sm font-medium transition-colors ${type === 'daily' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -182,12 +203,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {inventoryOnly ? (
           <p className="text-xs text-gray-400">Showing inventory pulled/returned report only, per your role's Reports access.</p>
         ) : (
-          <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden w-fit">
+          <div className="print:hidden flex bg-white border border-gray-200 rounded-lg overflow-hidden w-fit">
             {[
               { key: 'revenue', label: '💰 Revenue' },
               { key: 'invoices', label: '🧾 Invoices' },
               { key: 'orders', label: '📋 Orders' },
               { key: 'inventory', label: '📦 Frequent Inventory' },
+              { key: 'audit', label: '📋 Inventory Audit' },
             ].map(r => (
               <a key={r.key} href={`/reports?${periodQuery}&report=${r.key}`}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${reportType === r.key ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -363,6 +385,43 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                       <td className="px-5 py-3 text-gray-500 text-xs">{row.sku ?? '—'}</td>
                       <td className="px-5 py-3 text-center text-gray-700">{row.orderCount}</td>
                       <td className="px-5 py-3 text-right font-semibold text-indigo-600">{row.totalQty}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+        {/* Inventory Audit report — printable count sheet */}
+        {reportType === 'audit' && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <span className="font-semibold text-gray-800">Inventory Audit Report — {new Date().toLocaleDateString()}</span>
+              <PrintButton />
+            </div>
+            {auditRows.length === 0 ? (
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">No inventory items found.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-left print:bg-white">
+                    <th className="px-5 py-3 font-medium text-gray-600">Item</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Category</th>
+                    <th className="px-5 py-3 font-medium text-gray-600">Location</th>
+                    <th className="px-5 py-3 font-medium text-gray-600 text-center">Available</th>
+                    <th className="px-5 py-3 font-medium text-gray-600 text-center">Actual Count</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {auditRows.map(row => (
+                    <tr key={row.name}>
+                      <td className="px-5 py-3 font-medium text-gray-900">{row.name}</td>
+                      <td className="px-5 py-3 text-gray-600">{row.category ?? '—'}</td>
+                      <td className="px-5 py-3 text-gray-600">{row.location ?? '—'}</td>
+                      <td className="px-5 py-3 text-center text-gray-700">{row.available}</td>
+                      <td className="px-5 py-3 text-center">
+                        <div className="w-20 h-6 border-b border-gray-300 mx-auto" />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

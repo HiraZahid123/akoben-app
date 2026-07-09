@@ -138,7 +138,8 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
       }).eq('id', order.id)
 
       if (useOverride) {
-        await fetch('/api/send-email', {
+        // Fire-and-forget — don't block the save on the email round-trip
+        fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

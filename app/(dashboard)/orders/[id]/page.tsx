@@ -105,7 +105,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         {isUnavailable ? (
                           <div className="space-y-1">
                             <span className="inline-block text-xs px-2 py-0.5 bg-red-100 text-red-700 font-medium rounded-full">
-                              ⚠ Only {avail.available} available
+                              ⚠ Insufficient ({avail.available} available)
                             </span>
                             <div>
                               <RemoveItemLink orderId={id} itemId={item.id} />

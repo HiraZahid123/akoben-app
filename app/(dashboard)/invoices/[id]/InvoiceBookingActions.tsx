@@ -30,18 +30,17 @@ export default function InvoiceBookingActions({ invoiceId, orderId, invoiceNumbe
   const paid = amountPaid ?? 0
   const depositMet = total > 0 && paid >= total * 0.5
 
-  async function notifyOverride(action: string) {
-    try {
-      await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: 'irenebaidoo.agyapong@gmail.com',
-          subject: `50% Override Used — ${invoiceNumber}`,
-          html: `<p>A manager override was used on invoice <strong>${invoiceNumber}</strong> (customer: ${customerName}).</p><p>Action: <strong>${action}</strong></p><p>Amount paid so far: GHS ${paid.toFixed(2)} of GHS ${total.toFixed(2)}.</p>`,
-        }),
-      })
-    } catch { /* non-blocking */ }
+  // Fire-and-forget — do not await at the call site, so the Save action isn't blocked on the email round-trip
+  function notifyOverride(action: string) {
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: 'irenebaidoo.agyapong@gmail.com',
+        subject: `50% Override Used — ${invoiceNumber}`,
+        html: `<p>A manager override was used on invoice <strong>${invoiceNumber}</strong> (customer: ${customerName}).</p><p>Action: <strong>${action}</strong></p><p>Amount paid so far: GHS ${paid.toFixed(2)} of GHS ${total.toFixed(2)}.</p>`,
+      }),
+    }).catch(() => {})
   }
 
   async function bookEvent() {
@@ -64,7 +63,7 @@ export default function InvoiceBookingActions({ invoiceId, orderId, invoiceNumbe
     setLoading(true)
     try {
       await supabase.from('orders').update({ is_booked: true, booked_at: new Date().toISOString(), status: 'confirmed', booked_via_override: true }).eq('id', orderId)
-      await notifyOverride(`Booked event with only GHS ${paid.toFixed(2)} of GHS ${total.toFixed(2)} paid (below 50% deposit requirement)`)
+      notifyOverride(`Booked event with only GHS ${paid.toFixed(2)} of GHS ${total.toFixed(2)} paid (below 50% deposit requirement)`)
       setBooked(true)
       success('Event booked via override — Irene has been notified by email.')
       router.refresh()
