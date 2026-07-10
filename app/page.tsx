@@ -4,6 +4,7 @@ import {
   MessageSquare, ClipboardList, Receipt, CalendarCheck, Truck, PackageCheck,
   Package, Percent, Layers, ArrowRight, type LucideIcon,
 } from 'lucide-react'
+import BlobBackground from '@/components/public/BlobBackground'
 
 const WORKFLOW: { n: string; title: string; body: string; icon: LucideIcon }[] = [
   { n: '01', title: 'Quote', body: 'Draft a rental quote for the client and send it for approval.', icon: MessageSquare },
@@ -30,9 +31,11 @@ export default async function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen text-gray-900">
+      <BlobBackground />
+
       {/* Top bar */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <header className="sticky top-0 z-10 bg-white/50 backdrop-blur-xl border-b border-white/60">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm text-white">A</div>
@@ -77,8 +80,8 @@ export default async function HomePage() {
           {stats.map(stat => {
             const Icon = stat.icon
             return (
-              <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
-                <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <div key={stat.label} className="bg-white/50 backdrop-blur-xl rounded-xl border border-white/60 shadow-sm p-5 flex items-center gap-4">
+                <div className="w-11 h-11 rounded-lg bg-blue-50/80 flex items-center justify-center shrink-0">
                   <Icon size={20} className="text-blue-600" strokeWidth={2} />
                 </div>
                 <div>
@@ -98,9 +101,9 @@ export default async function HomePage() {
           {WORKFLOW.map(step => {
             const Icon = step.icon
             return (
-              <div key={step.n} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow">
+              <div key={step.n} className="bg-white/50 backdrop-blur-xl rounded-xl border border-white/60 shadow-sm p-5 hover:bg-white/70 transition-colors">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100/80 flex items-center justify-center shrink-0">
                     <Icon size={18} className="text-gray-600" strokeWidth={2} />
                   </div>
                   <div>
@@ -116,7 +119,7 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100">
+      <footer className="bg-white/50 backdrop-blur-xl border-t border-white/60">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 bg-blue-500 rounded-md flex items-center justify-center font-bold text-xs text-white">A</div>

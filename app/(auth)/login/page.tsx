@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ArrowRight } from 'lucide-react'
+import BlobBackground from '@/components/public/BlobBackground'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -38,8 +39,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
-      <header className="bg-white border-b border-gray-100">
+    <div className="min-h-screen text-gray-900 flex flex-col">
+      <BlobBackground />
+
+      <header className="bg-white/50 backdrop-blur-xl border-b border-white/60">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm text-white">A</div>
@@ -53,7 +56,7 @@ export default function LoginPage() {
       </header>
 
       <div className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm bg-white rounded-xl border border-gray-200 p-8">
+        <div className="w-full max-w-sm bg-white/50 backdrop-blur-xl rounded-xl border border-white/60 shadow-lg p-8">
           <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mb-2">
             Cape Coast, Ghana
           </p>
@@ -61,7 +64,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
-              <div className="text-sm px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700">
+              <div className="text-sm px-4 py-3 rounded-lg border border-red-200 bg-red-50/80 text-red-700">
                 {error}
               </div>
             )}
@@ -72,7 +75,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 bg-white/70 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="you@example.com"
               />
             </div>
@@ -83,7 +86,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 bg-white/70 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
               />
             </div>

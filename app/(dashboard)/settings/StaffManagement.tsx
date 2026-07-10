@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/ToastProvider'
 import Badge from '@/components/ui/Badge'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { ROLE_LABELS, MANAGER_CREATABLE_ROLES, roleHasOverridePrivilege, type UserRole } from '@/lib/permissions'
 import { Check } from 'lucide-react'
 
@@ -158,7 +159,16 @@ export default function StaffManagement({ currentUserRole }: { currentUserRole: 
 
       {/* Staff list */}
       {loading ? (
-        <p className="px-5 py-8 text-sm text-gray-400 text-center">Loading...</p>
+        <div className="p-5 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
+        </div>
       ) : staff.length === 0 ? (
         <p className="px-5 py-8 text-sm text-gray-400 text-center">No staff accounts yet.</p>
       ) : (

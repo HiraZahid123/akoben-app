@@ -26,6 +26,25 @@ html, body {
   animation: slide-in 0.2s ease-out;
 }
 
+/* Public-page glassmorphism blobs */
+@keyframes blob-float-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(4%, 6%) scale(1.08); }
+  66%      { transform: translate(-3%, 3%) scale(0.96); }
+}
+@keyframes blob-float-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-6%, -4%) scale(1.1); }
+}
+@keyframes blob-float-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(5%, -5%) scale(0.94); }
+  75%      { transform: translate(-4%, 4%) scale(1.05); }
+}
+.animate-blob-a { animation: blob-float-a 18s ease-in-out infinite; }
+.animate-blob-b { animation: blob-float-b 22s ease-in-out infinite; }
+.animate-blob-c { animation: blob-float-c 26s ease-in-out infinite; }
+
 /* Custom scrollbars — light surfaces */
 * {
   scrollbar-width: thin;
