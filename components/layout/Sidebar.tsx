@@ -2,25 +2,30 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+  LayoutDashboard, ClipboardList, Package, Users, ScanLine,
+  MessageSquare, Receipt, Calendar, Truck, BarChart3,
+  FileText, Phone, Archive, HelpCircle, Settings, LogOut, type LucideIcon,
+} from 'lucide-react'
 import type { UserRole } from '@/lib/auth-role'
 import { ROLE_PERMISSIONS, ROLE_LABELS, type ModulePermissions } from '@/lib/permissions'
 
-const NAV_ITEMS: { href: string; label: string; icon: string; module: keyof Omit<ModulePermissions, 'overridePrivilege'> }[] = [
-  { href: '/dashboard',  label: 'Dashboard',   icon: '📊', module: 'dashboard' },
-  { href: '/orders',     label: 'Orders',      icon: '📋', module: 'orders' },
-  { href: '/inventory',  label: 'Inventory',   icon: '📦', module: 'inventory' },
-  { href: '/customers',  label: 'Customers',   icon: '👥', module: 'customers' },
-  { href: '/scanner',    label: 'Scanner',     icon: '📷', module: 'scanner' },
-  { href: '/quotes',     label: 'Quotes',      icon: '💬', module: 'quotes' },
-  { href: '/invoices',   label: 'Invoices',    icon: '🧾', module: 'invoices' },
-  { href: '/calendar',   label: 'Calendar',    icon: '📅', module: 'calendar' },
-  { href: '/delivery',   label: 'Delivery',    icon: '🚚', module: 'delivery' },
-  { href: '/reports',    label: 'Reports',     icon: '📈', module: 'reports' },
-  { href: '/contracts',  label: 'Contracts',   icon: '📝', module: 'orders' },
-  { href: '/crm',        label: 'CRM',         icon: '📞', module: 'crm' },
-  { href: '/backoffice', label: 'Back Office', icon: '🗄️', module: 'backoffice' },
-  { href: '/help',       label: 'Help & Guide', icon: '❓', module: 'dashboard' },
-  { href: '/settings',   label: 'Settings',    icon: '⚙️', module: 'settings' },
+const NAV_ITEMS: { href: string; label: string; icon: LucideIcon; module: keyof Omit<ModulePermissions, 'overridePrivilege'> }[] = [
+  { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard, module: 'dashboard' },
+  { href: '/orders',     label: 'Orders',      icon: ClipboardList,   module: 'orders' },
+  { href: '/inventory',  label: 'Inventory',   icon: Package,         module: 'inventory' },
+  { href: '/customers',  label: 'Customers',   icon: Users,           module: 'customers' },
+  { href: '/scanner',    label: 'Scanner',     icon: ScanLine,        module: 'scanner' },
+  { href: '/quotes',     label: 'Quotes',      icon: MessageSquare,   module: 'quotes' },
+  { href: '/invoices',   label: 'Invoices',    icon: Receipt,         module: 'invoices' },
+  { href: '/calendar',   label: 'Calendar',    icon: Calendar,        module: 'calendar' },
+  { href: '/delivery',   label: 'Delivery',    icon: Truck,           module: 'delivery' },
+  { href: '/reports',    label: 'Reports',     icon: BarChart3,       module: 'reports' },
+  { href: '/contracts',  label: 'Contracts',   icon: FileText,        module: 'orders' },
+  { href: '/crm',        label: 'CRM',         icon: Phone,           module: 'crm' },
+  { href: '/backoffice', label: 'Back Office', icon: Archive,         module: 'backoffice' },
+  { href: '/help',       label: 'Help & Guide', icon: HelpCircle,     module: 'dashboard' },
+  { href: '/settings',   label: 'Settings',    icon: Settings,        module: 'settings' },
 ]
 
 export default function Sidebar({ role = 'staff1' }: { role?: UserRole }) {
@@ -42,10 +47,11 @@ export default function Sidebar({ role = 'staff1' }: { role?: UserRole }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3">
+      <nav className="sidebar-scroll flex-1 overflow-y-auto py-3">
         {navItems.map(item => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           const access = permissions[item.module]
+          const Icon = item.icon
           return (
             <Link
               key={item.href}
@@ -57,7 +63,7 @@ export default function Sidebar({ role = 'staff1' }: { role?: UserRole }) {
               }`}
             >
               <span className="flex items-center gap-3">
-                <span className="text-base leading-none">{item.icon}</span>
+                <Icon size={17} strokeWidth={2} className="shrink-0" />
                 <span>{item.label}</span>
               </span>
               {(access === 'view' || access === 'limited') && (
@@ -73,7 +79,8 @@ export default function Sidebar({ role = 'staff1' }: { role?: UserRole }) {
         <div className="flex items-center justify-between">
           <span className="text-[10px] text-slate-500">{ROLE_LABELS[role] ?? role}</span>
           <form action="/api/auth/signout" method="post">
-            <button type="submit" className="text-xs text-slate-400 hover:text-white transition-colors">
+            <button type="submit" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
+              <LogOut size={13} />
               Sign out
             </button>
           </form>

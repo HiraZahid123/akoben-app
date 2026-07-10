@@ -1,5 +1,8 @@
-﻿import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { formatGHS } from '@/lib/utils'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
+import {
+  ClipboardList, PackageCheck, AlertTriangle, Users,
+  FilePlus2, MessageSquarePlus, UserPlus, ScanLine, type LucideIcon,
+} from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient()
@@ -17,11 +20,18 @@ export default async function DashboardPage() {
     supabase.from('customers').select('*', { count: 'exact', head: true }),
   ])
 
-  const stats = [
-    { label: 'Total Orders',    value: totalOrders ?? 0,    color: 'bg-blue-50 text-blue-700' },
-    { label: 'Active Rentals',  value: activeOrders ?? 0,   color: 'bg-green-50 text-green-700' },
-    { label: 'Overdue',         value: overdueOrders ?? 0,  color: 'bg-red-50 text-red-700' },
-    { label: 'Total Customers', value: totalCustomers ?? 0, color: 'bg-orange-50 text-orange-700' },
+  const stats: { label: string; value: number; icon: LucideIcon; iconBg: string; iconColor: string }[] = [
+    { label: 'Total Orders',    value: totalOrders ?? 0,    icon: ClipboardList, iconBg: 'bg-blue-50',   iconColor: 'text-blue-600' },
+    { label: 'Active Rentals',  value: activeOrders ?? 0,   icon: PackageCheck,  iconBg: 'bg-green-50',  iconColor: 'text-green-600' },
+    { label: 'Overdue',         value: overdueOrders ?? 0,  icon: AlertTriangle, iconBg: 'bg-red-50',    iconColor: 'text-red-600' },
+    { label: 'Total Customers', value: totalCustomers ?? 0, icon: Users,         iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
+  ]
+
+  const quickActions: { href: string; label: string; icon: LucideIcon; iconBg: string; iconColor: string }[] = [
+    { href: '/orders/new',    label: 'New Order',    icon: FilePlus2,        iconBg: 'bg-blue-50',   iconColor: 'text-blue-600' },
+    { href: '/quotes/new',    label: 'New Quote',    icon: MessageSquarePlus, iconBg: 'bg-purple-50', iconColor: 'text-purple-600' },
+    { href: '/customers/new', label: 'New Customer', icon: UserPlus,         iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
+    { href: '/scanner',       label: 'Scan Item',    icon: ScanLine,         iconBg: 'bg-green-50',  iconColor: 'text-green-600' },
   ]
 
   return (
@@ -32,32 +42,43 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        {stats.map(stat => (
-          <div key={stat.label} className={`rounded-xl p-5 ${stat.color}`}>
-            <div className="text-2xl font-bold">{stat.value}{(stat as any).suffix}</div>
-            <div className="text-sm mt-1 opacity-80">{stat.label}</div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {stats.map(stat => {
+          const Icon = stat.icon
+          return (
+            <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4 hover:shadow-sm transition-shadow">
+              <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${stat.iconBg}`}>
+                <Icon size={20} className={stat.iconColor} strokeWidth={2} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 leading-none">{stat.value}</div>
+                <div className="text-sm text-gray-500 mt-1.5">{stat.label}</div>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { href: '/orders/new',    label: 'New Order',    icon: '📋' },
-          { href: '/quotes/new',    label: 'New Quote',    icon: '💬' },
-          { href: '/customers/new', label: 'New Customer', icon: '👤' },
-          { href: '/scanner',       label: 'Scan Item',    icon: '📷' },
-        ].map(action => (
-          <a
-            key={action.href}
-            href={action.href}
-            className="flex items-center gap-3 bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
-          >
-            <span className="text-2xl">{action.icon}</span>
-            <span className="font-medium text-gray-800">{action.label}</span>
-          </a>
-        ))}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {quickActions.map(action => {
+            const Icon = action.icon
+            return (
+              <a
+                key={action.href}
+                href={action.href}
+                className="flex items-center gap-3 bg-white rounded-xl p-5 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all"
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${action.iconBg}`}>
+                  <Icon size={18} className={action.iconColor} strokeWidth={2} />
+                </div>
+                <span className="font-medium text-gray-800 text-sm">{action.label}</span>
+              </a>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
