@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { CheckCircle2, XCircle, AlertTriangle, Info, X, type LucideIcon } from 'lucide-react'
 
 type ToastType = 'success' | 'error' | 'info' | 'warning'
 
@@ -20,11 +21,11 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null)
 
-const ICONS: Record<ToastType, string> = {
-  success: '✓',
-  error: '✕',
-  warning: '⚠',
-  info: 'ℹ',
+const ICONS: Record<ToastType, LucideIcon> = {
+  success: CheckCircle2,
+  error: XCircle,
+  warning: AlertTriangle,
+  info: Info,
 }
 
 const STYLES: Record<ToastType, string> = {
@@ -58,16 +59,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toast, success, error, info, warning }}>
       {children}
       <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
-        {toasts.map(t => (
-          <div
-            key={t.id}
-            className={`flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-lg text-sm font-medium pointer-events-auto animate-slide-in max-w-sm ${STYLES[t.type]}`}
-          >
-            <span className="text-base leading-none font-bold">{ICONS[t.type]}</span>
-            <span>{t.message}</span>
-            <button onClick={() => remove(t.id)} className="ml-auto opacity-70 hover:opacity-100 leading-none text-lg">×</button>
-          </div>
-        ))}
+        {toasts.map(t => {
+          const Icon = ICONS[t.type]
+          return (
+            <div
+              key={t.id}
+              className={`flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-lg text-sm font-medium pointer-events-auto animate-slide-in max-w-sm ${STYLES[t.type]}`}
+            >
+              <Icon size={17} className="shrink-0" />
+              <span>{t.message}</span>
+              <button onClick={() => remove(t.id)} className="ml-auto opacity-70 hover:opacity-100 shrink-0"><X size={15} /></button>
+            </div>
+          )
+        })}
       </div>
     </ToastContext.Provider>
   )

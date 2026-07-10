@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { GHANA_REGIONS } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/ToastProvider'
+import { Building2 } from 'lucide-react'
 
 export default function SettingsForm({ settings }: { settings: any }) {
   const router = useRouter()
@@ -225,7 +226,7 @@ export default function SettingsForm({ settings }: { settings: any }) {
               <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-1" />
             ) : (
               <div className="text-center text-gray-400">
-                <div className="text-xl mb-1">🏢</div>
+                <Building2 size={22} className="mx-auto mb-1" strokeWidth={1.5} />
                 <div className="text-xs">Upload logo</div>
               </div>
             )}

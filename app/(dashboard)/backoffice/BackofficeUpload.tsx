@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
+import { Upload, FolderOpen, X } from 'lucide-react'
 
 interface Props {
   categories: string[]
@@ -65,7 +66,7 @@ export default function BackofficeUpload({ categories, categoryLabels }: Props) 
     <>
       <button onClick={() => setOpen(true)}
         className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-        ⬆ Upload Document
+        <Upload size={15} /> Upload Document
       </button>
 
       {open && (
@@ -73,7 +74,7 @@ export default function BackofficeUpload({ categories, categoryLabels }: Props) 
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="font-semibold text-gray-800">Upload Document</h2>
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
             <form onSubmit={handleUpload} className="p-6 space-y-4">
               {/* File picker */}
@@ -89,7 +90,7 @@ export default function BackofficeUpload({ categories, categoryLabels }: Props) 
                     </div>
                   ) : (
                     <div>
-                      <p className="text-2xl mb-1">📁</p>
+                      <FolderOpen size={28} className="mx-auto mb-1 text-gray-300" strokeWidth={1.5} />
                       <p className="text-sm text-gray-500">Click to select a file</p>
                       <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, images supported</p>
                     </div>
@@ -133,7 +134,7 @@ export default function BackofficeUpload({ categories, categoryLabels }: Props) 
               <div className="flex gap-3 pt-2">
                 <button type="submit" disabled={loading || !file}
                   className="flex-1 bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm">
-                  {loading ? 'Uploading...' : '⬆ Upload'}
+                  {loading ? 'Uploading...' : <span className="inline-flex items-center gap-1.5"><Upload size={14} /> Upload</span>}
                 </button>
                 <button type="button" onClick={() => setOpen(false)}
                   className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm">

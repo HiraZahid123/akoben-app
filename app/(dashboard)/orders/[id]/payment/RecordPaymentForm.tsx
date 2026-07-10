@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, PAYMENT_METHOD_LABELS } from '@/lib/utils'
 import { useToast } from '@/components/ui/ToastProvider'
+import { AlertTriangle } from 'lucide-react'
 
 interface Props {
   orderId: string
@@ -157,8 +158,8 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
             ))}
         </select>
         {isOverride && (
-          <p className="text-xs text-amber-600 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            ⚠ Using this will confirm the order regardless of the 50% deposit rule and notify Irene by email.
+          <p className="text-xs text-amber-600 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
+            <AlertTriangle size={13} className="shrink-0" /> Using this will confirm the order regardless of the 50% deposit rule and notify Irene by email.
           </p>
         )}
       </div>

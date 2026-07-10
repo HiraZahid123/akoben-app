@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
+import { CheckCircle2, Check, AlertTriangle, Wrench, ScanLine } from 'lucide-react'
 
 interface Unit { id: string; unit_number: string | null; barcode: string | null; status: string; condition: string }
 interface OrderItem {
@@ -112,7 +113,7 @@ export default function ReturnOrderSheet({ order, items, invoiceNumber, checkedO
   if (submitted) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-10 text-center max-w-2xl">
-        <div className="text-4xl mb-3">✅</div>
+        <CheckCircle2 size={40} className="mx-auto mb-3 text-green-500" strokeWidth={1.5} />
         <h2 className="text-xl font-bold text-gray-900 mb-1">Return Confirmed</h2>
         <p className="text-gray-500 text-sm">Items restored to inventory. Redirecting to Delivery log...</p>
       </div>
@@ -145,8 +146,8 @@ export default function ReturnOrderSheet({ order, items, invoiceNumber, checkedO
             placeholder="Scan or type barcode / unit number..."
             className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
-          <button type="submit" className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600">
-            ✓ Scan
+          <button type="submit" className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600">
+            <ScanLine size={14} /> Scan
           </button>
         </form>
       </div>
@@ -191,7 +192,7 @@ export default function ReturnOrderSheet({ order, items, invoiceNumber, checkedO
                       </span>
                       <button onClick={() => manualSetQty(item.id, Math.min(outUnits.length, inCount + 1))}
                         className="w-6 h-6 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
-                      {done && <span className="text-green-500 text-xs">✓</span>}
+                      {done && <Check size={14} className="text-green-500" />}
                     </div>
                   </td>
                   <td className="px-5 py-3">
@@ -208,7 +209,10 @@ export default function ReturnOrderSheet({ order, items, invoiceNumber, checkedO
                                       ? c === 'good' ? 'bg-green-500 text-white' : c === 'damaged' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
                                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                   }`}>
-                                  {c === 'good' ? '✓ Good' : c === 'damaged' ? '⚠ Damaged' : '🔧 Repair'}
+                                  <span className="inline-flex items-center gap-1">
+                                    {c === 'good' ? <Check size={11} /> : c === 'damaged' ? <AlertTriangle size={11} /> : <Wrench size={11} />}
+                                    {c === 'good' ? 'Good' : c === 'damaged' ? 'Damaged' : 'Repair'}
+                                  </span>
                                 </button>
                               ))}
                             </div>
@@ -225,14 +229,14 @@ export default function ReturnOrderSheet({ order, items, invoiceNumber, checkedO
         <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
           <div className="text-sm text-gray-500">
             {totalIn === totalOut
-              ? <span className="text-green-600 font-medium">✓ All items accounted for</span>
+              ? <span className="inline-flex items-center gap-1 text-green-600 font-medium"><Check size={14} /> All items accounted for</span>
               : <span className="text-amber-600">{totalOut - totalIn} item(s) still to scan</span>}
           </div>
           <button
             onClick={confirmReturn}
             disabled={loading || totalIn === 0}
-            className="px-5 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors">
-            {loading ? 'Processing...' : '✓ Confirm Return'}
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors">
+            {loading ? 'Processing...' : <><Check size={14} /> Confirm Return</>}
           </button>
         </div>
       </div>

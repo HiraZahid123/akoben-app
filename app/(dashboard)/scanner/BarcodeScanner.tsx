@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, formatDateTime } from '@/lib/utils'
 import Badge from '@/components/ui/Badge'
+import { AlertTriangle, Check, Wrench } from 'lucide-react'
 
 type ScanAction = 'checkout' | 'checkin' | 'lookup'
 
@@ -273,7 +274,7 @@ export default function BarcodeScanner() {
 
             {scanResult.error && (
               <div className="flex items-center gap-2 text-red-600">
-                <span className="text-xl">⚠</span>
+                <AlertTriangle size={20} />
                 <p className="text-sm font-medium">{scanResult.error}</p>
               </div>
             )}
@@ -296,7 +297,7 @@ export default function BarcodeScanner() {
                 </div>
                 {!scanResult.error && (
                   <div className={`flex items-center gap-1.5 text-sm font-medium ${mode === 'checkout' ? 'text-red-600' : mode === 'checkin' ? 'text-green-600' : 'text-blue-600'}`}>
-                    <span>✓</span>
+                    <Check size={15} />
                     <span>{mode === 'checkout' ? 'Checked out' : mode === 'checkin' ? 'Checked in' : 'Lookup complete'}</span>
                   </div>
                 )}
@@ -305,16 +306,16 @@ export default function BarcodeScanner() {
                     <p className="text-xs text-gray-500 mb-2 font-medium">Item condition on return:</p>
                     <div className="flex gap-2">
                       <button onClick={() => { setDamageUnitId(null) }}
-                        className="flex-1 py-1.5 bg-green-100 text-green-700 text-xs font-medium rounded-lg hover:bg-green-200 transition-colors">
-                        ✓ Good
+                        className="flex-1 py-1.5 bg-green-100 text-green-700 text-xs font-medium rounded-lg hover:bg-green-200 transition-colors inline-flex items-center justify-center gap-1">
+                        <Check size={12} /> Good
                       </button>
                       <button onClick={() => markCondition(scanResult.unit!.id, 'damaged')}
-                        className="flex-1 py-1.5 bg-red-100 text-red-700 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors">
-                        ⚠ Damaged
+                        className="flex-1 py-1.5 bg-red-100 text-red-700 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors inline-flex items-center justify-center gap-1">
+                        <AlertTriangle size={12} /> Damaged
                       </button>
                       <button onClick={() => markCondition(scanResult.unit!.id, 'maintenance')}
-                        className="flex-1 py-1.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-lg hover:bg-amber-200 transition-colors">
-                        🔧 Repairs
+                        className="flex-1 py-1.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-lg hover:bg-amber-200 transition-colors inline-flex items-center justify-center gap-1">
+                        <Wrench size={12} /> Repairs
                       </button>
                     </div>
                   </div>

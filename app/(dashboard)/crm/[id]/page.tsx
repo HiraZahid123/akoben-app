@@ -3,11 +3,9 @@ import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
 import { formatDateTime } from '@/lib/utils'
 import { notFound } from 'next/navigation'
+import { ChannelIcon } from '@/lib/channelIcons'
+import { Mail, Phone } from 'lucide-react'
 
-const CHANNEL_ICONS: Record<string, string> = {
-  email: '✉️', sms: '💬', whatsapp: '📱',
-  phone_call: '📞', in_person: '🤝', other: '📌',
-}
 const CHANNEL_LABELS: Record<string, string> = {
   email: 'Email', sms: 'SMS', whatsapp: 'WhatsApp',
   phone_call: 'Phone Call', in_person: 'In Person', other: 'Other',
@@ -42,7 +40,9 @@ export default async function CRMDetailPage({ params }: { params: Promise<{ id: 
         <div className="col-span-2">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">{CHANNEL_ICONS[log.channel] ?? '📌'}</span>
+              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                <ChannelIcon channel={log.channel} size={18} className="text-gray-600" />
+              </div>
               <div>
                 <p className="font-semibold text-gray-900">{CHANNEL_LABELS[log.channel] ?? log.channel}</p>
                 <Badge variant={log.direction === 'outbound' ? 'info' : 'default'} className="capitalize text-xs mt-0.5">
@@ -83,8 +83,8 @@ export default async function CRMDetailPage({ params }: { params: Promise<{ id: 
                 {customer?.full_name}
               </a>
               {customer?.company_name && <p className="text-gray-500">{customer.company_name}</p>}
-              {customer?.email && <p className="text-gray-600">✉️ {customer.email}</p>}
-              {customer?.phone && <p className="text-gray-600">📞 {customer.phone}</p>}
+              {customer?.email && <p className="text-gray-600 flex items-center gap-1.5"><Mail size={13} className="text-gray-400" /> {customer.email}</p>}
+              {customer?.phone && <p className="text-gray-600 flex items-center gap-1.5"><Phone size={13} className="text-gray-400" /> {customer.phone}</p>}
             </div>
             <div className="mt-3 pt-3 border-t border-gray-100">
               <a href={`/crm/new?customer_id=${customer?.id}`}

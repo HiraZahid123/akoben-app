@@ -1,5 +1,7 @@
 'use client'
 
+import { ClipboardList, DollarSign } from 'lucide-react'
+
 interface Props {
   paystackConfigured: boolean
 }
@@ -67,7 +69,7 @@ export default function IntegrationsPanel({ paystackConfigured }: Props) {
             download
             className="flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition-colors"
           >
-            <span className="text-xl">📋</span>
+            <ClipboardList size={22} className="text-gray-500" />
             <div>
               <p className="text-sm font-medium text-gray-800">Orders Export</p>
               <p className="text-xs text-gray-400">All orders with totals</p>
@@ -78,7 +80,7 @@ export default function IntegrationsPanel({ paystackConfigured }: Props) {
             download
             className="flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition-colors"
           >
-            <span className="text-xl">💰</span>
+            <DollarSign size={22} className="text-gray-500" />
             <div>
               <p className="text-sm font-medium text-gray-800">Payments Export</p>
               <p className="text-xs text-gray-400">All received payments</p>

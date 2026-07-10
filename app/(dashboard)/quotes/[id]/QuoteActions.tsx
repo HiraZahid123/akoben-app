@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { quoteEmailHtml } from '@/lib/email-client'
 import { useToast } from '@/components/ui/ToastProvider'
 import type { QuoteStatus } from '@/types/database'
+import { Mail, MessageCircle, Check, ArrowRight, Ban, Trash2 } from 'lucide-react'
 
 interface Props {
   quoteId: string
@@ -152,48 +153,48 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
     <div className="flex items-center gap-2 flex-wrap">
       {/* Resend buttons — always visible so updated quotes can be re-sent */}
       <button onClick={sendQuoteEmail} disabled={loading}
-        className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-        {loading ? '...' : currentStatus === 'draft' ? '📧 Send to Customer' : '📧 Resend Email'}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        {loading ? '...' : <><Mail size={14} /> {currentStatus === 'draft' ? 'Send to Customer' : 'Resend Email'}</>}
       </button>
       <button onClick={sendWhatsApp}
-        className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
-        💬 WhatsApp
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
+        <MessageCircle size={14} /> WhatsApp
       </button>
 
       {currentStatus === 'sent' && (
         <button onClick={markAccepted} disabled={loading}
-          className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
-          {loading ? '...' : '✓ Mark Accepted'}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
+          {loading ? '...' : <><Check size={14} /> Mark Accepted</>}
         </button>
       )}
       {currentStatus === 'accepted' && !convertedToOrder && (
         <button onClick={convertToOrder} disabled={loading}
-          className="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors">
-          {loading ? '...' : '→ Convert to Order'}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors">
+          {loading ? '...' : <>Convert to Order <ArrowRight size={14} /></>}
         </button>
       )}
       {currentStatus === 'accepted' && convertedToOrder && (
         <a href={`/orders/${convertedToOrder}`}
-          className="px-3 py-1.5 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
-          ✓ View Order →
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
+          <Check size={14} /> View Order <ArrowRight size={14} />
         </a>
       )}
 
       {/* Void — for quotes converted to order but had errors (keeps record) */}
       {(currentStatus as string) !== 'void' && (
         <button onClick={voidQuote} disabled={loading}
-          className="px-3 py-1.5 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 disabled:opacity-50 transition-colors"
           title="Mark as void — keeps the record but flags it as invalid">
-          {loading ? '...' : '⊘ Void'}
+          {loading ? '...' : <><Ban size={14} /> Void</>}
         </button>
       )}
 
       {/* Delete — only for quotes not yet converted to an order */}
       {!convertedToOrder && (currentStatus as string) !== 'void' && (
         <button onClick={deleteQuote} disabled={loading}
-          className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
           title="Permanently delete this quote — use only if it was never converted to an order">
-          {loading ? '...' : '🗑 Delete'}
+          {loading ? '...' : <><Trash2 size={14} /> Delete</>}
         </button>
       )}
     </div>

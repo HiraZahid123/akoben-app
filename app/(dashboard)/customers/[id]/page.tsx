@@ -3,6 +3,8 @@ import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
 import { formatDate, formatDateTime, formatGHS, PAYMENT_METHOD_LABELS } from '@/lib/utils'
 import { notFound } from 'next/navigation'
+import { ChannelIcon } from '@/lib/channelIcons'
+import { Phone, Mail, MessageCircle } from 'lucide-react'
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -18,11 +20,6 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const customer = r1.data as any
   const orders = (r2.data ?? []) as any[]
   const comms = (r3.data ?? []) as any[]
-
-  const CHANNEL_ICONS: Record<string, string> = {
-    email: '✉️', sms: '💬', whatsapp: '📱',
-    phone_call: '📞', in_person: '🤝', other: '📌',
-  }
 
   const STATUS_VARIANTS: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
     draft: 'default', confirmed: 'info', active: 'success',
@@ -99,7 +96,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               <div className="divide-y divide-gray-50">
                 {comms.map((c: any) => (
                   <div key={c.id} className="px-5 py-3 flex items-start gap-3">
-                    <span className="text-lg mt-0.5">{CHANNEL_ICONS[c.channel] ?? '📌'}</span>
+                    <ChannelIcon channel={c.channel} size={18} className="mt-0.5 text-gray-400" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{c.subject ?? c.channel}</p>
                       {c.body && <p className="text-xs text-gray-400 truncate mt-0.5">{c.body}</p>}
@@ -121,18 +118,18 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <div className="text-sm space-y-2">
               {customer.phone && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <span className="text-gray-400">📞</span> {customer.phone}
+                  <Phone size={15} className="text-gray-400" /> {customer.phone}
                 </div>
               )}
               {customer.email && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <span className="text-gray-400">✉️</span>
+                  <Mail size={15} className="text-gray-400" />
                   <a href={`mailto:${customer.email}`} className="text-blue-600 hover:underline">{customer.email}</a>
                 </div>
               )}
               {customer.whatsapp && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <span className="text-gray-400">📱</span> {customer.whatsapp}
+                  <MessageCircle size={15} className="text-gray-400" /> {customer.whatsapp}
                 </div>
               )}
             </div>

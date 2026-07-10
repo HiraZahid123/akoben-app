@@ -1,16 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronDown, type LucideIcon } from 'lucide-react'
 
 interface Step { title: string; body: string }
 interface Props {
   id: string
   title: string
+  icon?: LucideIcon
   content?: string
   steps?: Step[]
 }
 
-export default function HelpAccordion({ id, title, content, steps }: Props) {
+export default function HelpAccordion({ id, title, icon: Icon, content, steps }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -18,8 +20,11 @@ export default function HelpAccordion({ id, title, content, steps }: Props) {
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors">
-        <span className="font-semibold text-gray-900 text-sm">{title}</span>
-        <span className={`text-gray-400 text-lg transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▾</span>
+        <span className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+          {Icon && <Icon size={16} className="text-orange-500" />}
+          {title}
+        </span>
+        <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (

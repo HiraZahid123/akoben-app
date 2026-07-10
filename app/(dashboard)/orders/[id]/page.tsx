@@ -7,6 +7,7 @@ import type { OrderStatus } from '@/types/database'
 import OrderActions from './OrderActions'
 import RemoveItemLink from './RemoveItemLink'
 import { computeDateRangeAvailability } from '@/lib/availability'
+import { AlertTriangle, Check } from 'lucide-react'
 
 const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
   draft: 'default', quote: 'info', confirmed: 'success', active: 'success',
@@ -104,15 +105,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       <td className="px-5 py-3 text-center">
                         {isUnavailable ? (
                           <div className="space-y-1">
-                            <span className="inline-block text-xs px-2 py-0.5 bg-red-100 text-red-700 font-medium rounded-full">
-                              ⚠ Insufficient ({avail.available} available)
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-red-700 font-medium rounded-full">
+                              <AlertTriangle size={11} /> Insufficient ({avail.available} available)
                             </span>
                             <div>
                               <RemoveItemLink orderId={id} itemId={item.id} />
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 font-medium rounded-full">✓ Available</span>
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-green-100 text-green-700 font-medium rounded-full"><Check size={11} /> Available</span>
                         )}
                       </td>
                     </tr>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Printer } from 'lucide-react'
 
 interface Props {
   barcode: string
@@ -62,10 +63,10 @@ export default function BarcodePrintButton({ barcode, label, unitNumber }: Props
       <button
         onClick={handlePrint}
         disabled={!ready}
-        className="text-xs text-purple-600 hover:text-purple-700 font-medium disabled:opacity-40"
+        className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 font-medium disabled:opacity-40"
         title="Print barcode label"
       >
-        🖨 Print
+        <Printer size={12} /> Print
       </button>
     </div>
   )

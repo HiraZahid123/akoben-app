@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
 import type { InventoryCategory, InventoryItem } from '@/types/database'
+import { Camera } from 'lucide-react'
 
 interface Props {
   categories: InventoryCategory[]
@@ -135,7 +136,7 @@ export default function InventoryForm({ categories, item, mode }: Props) {
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               ) : (
                 <div className="text-center text-gray-400">
-                  <div className="text-2xl mb-1">📷</div>
+                  <Camera size={26} className="mx-auto mb-1" strokeWidth={1.5} />
                   <div className="text-xs">Click to upload</div>
                 </div>
               )}

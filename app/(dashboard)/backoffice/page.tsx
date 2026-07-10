@@ -3,6 +3,11 @@ import PageHeader from '@/components/layout/PageHeader'
 import { formatDateTime } from '@/lib/utils'
 import BackofficeUpload from './BackofficeUpload'
 import BackofficeDelete from './BackofficeDelete'
+import {
+  Handshake, FileText, ClipboardList, File, ScrollText, Folder,
+  FolderOpen, Download, FileText as FileGeneric, FileImage,
+  type LucideIcon,
+} from 'lucide-react'
 
 const CATEGORIES = ['agreements', 'contracts', 'forms', 'templates', 'policies', 'other']
 
@@ -15,13 +20,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   other:      'Other',
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  agreements: '🤝',
-  contracts:  '📝',
-  forms:      '📋',
-  templates:  '📄',
-  policies:   '📜',
-  other:      '📁',
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  agreements: Handshake,
+  contracts:  FileText,
+  forms:      ClipboardList,
+  templates:  File,
+  policies:   ScrollText,
+  other:      Folder,
 }
 
 function formatFileSize(bytes: number | null) {
@@ -64,25 +69,28 @@ export default async function BackOfficePage({ searchParams }: { searchParams: P
           <div className="w-48 shrink-0 space-y-1">
             <a href="/backoffice"
               className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${activeCategory === 'all' ? 'bg-blue-600 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-              <span>📂 All Documents</span>
+              <span className="flex items-center gap-2"><FolderOpen size={15} /> All Documents</span>
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeCategory === 'all' ? 'bg-white/20' : 'bg-gray-100'}`}>{countByCategory.all ?? 0}</span>
             </a>
-            {CATEGORIES.map(cat => (
-              <a key={cat} href={`/backoffice?category=${cat}`}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${activeCategory === cat ? 'bg-blue-600 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                <span>{CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}</span>
-                {(countByCategory[cat] ?? 0) > 0 && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeCategory === cat ? 'bg-white/20' : 'bg-gray-100'}`}>{countByCategory[cat]}</span>
-                )}
-              </a>
-            ))}
+            {CATEGORIES.map(cat => {
+              const CatIcon = CATEGORY_ICONS[cat]
+              return (
+                <a key={cat} href={`/backoffice?category=${cat}`}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${activeCategory === cat ? 'bg-blue-600 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                  <span className="flex items-center gap-2"><CatIcon size={15} /> {CATEGORY_LABELS[cat]}</span>
+                  {(countByCategory[cat] ?? 0) > 0 && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeCategory === cat ? 'bg-white/20' : 'bg-gray-100'}`}>{countByCategory[cat]}</span>
+                  )}
+                </a>
+              )
+            })}
           </div>
 
           {/* Document list */}
           <div className="flex-1">
             {(docs ?? []).length === 0 ? (
               <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
-                <div className="text-4xl mb-3">📁</div>
+                <Folder size={40} className="mx-auto mb-3 text-gray-300" strokeWidth={1.5} />
                 <p className="text-gray-500 font-medium">No documents yet</p>
                 <p className="text-gray-400 text-sm mt-1">Click "Upload Document" to add your first file</p>
               </div>
@@ -103,7 +111,7 @@ export default async function BackOfficePage({ searchParams }: { searchParams: P
                       <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
-                            <span className="text-xl">{getFileIcon(doc.mime_type)}</span>
+                            {getFileIcon(doc.mime_type)}
                             <div>
                               <div className="font-medium text-gray-900">{doc.name}</div>
                               {doc.description && <div className="text-xs text-gray-400">{doc.description}</div>}
@@ -138,19 +146,16 @@ export default async function BackOfficePage({ searchParams }: { searchParams: P
 }
 
 function getFileIcon(mimeType: string | null) {
-  if (!mimeType) return '📄'
-  if (mimeType.includes('pdf')) return '📕'
-  if (mimeType.includes('word') || mimeType.includes('document')) return '📘'
-  if (mimeType.includes('sheet') || mimeType.includes('excel')) return '📗'
-  if (mimeType.includes('image')) return '🖼️'
-  return '📄'
+  const cls = "text-gray-400"
+  if (mimeType?.includes('image')) return <FileImage size={20} className={cls} />
+  return <FileGeneric size={20} className={cls} />
 }
 
 function BackofficeDownload({ filePath, fileName }: { filePath: string; fileName: string }) {
   return (
     <a href={`/api/backoffice/download?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`}
-      className="text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1 border border-blue-200 rounded hover:bg-blue-50 transition-colors">
-      ⬇ Download
+      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1 border border-blue-200 rounded hover:bg-blue-50 transition-colors">
+      <Download size={12} /> Download
     </a>
   )
 }

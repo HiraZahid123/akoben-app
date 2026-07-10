@@ -7,6 +7,7 @@ import InvoiceActions from './InvoiceActions'
 import InvoiceBookingActions from './InvoiceBookingActions'
 import VoidButton from './VoidButton'
 import type { InvoiceStatus } from '@/types/database'
+import { Download } from 'lucide-react'
 
 const STATUS_VARIANTS: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
   draft: 'default', sent: 'info', unpaid: 'warning', partial: 'purple',
@@ -138,8 +139,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                   <VoidButton invoiceId={invoice.id} amountPaid={invoice.amount_paid} />
                 )}
                 <a href={`/api/pdf/invoice/${invoice.id}`} target="_blank"
-                  className="px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
-                  ⬇ PDF
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
+                  <Download size={14} /> PDF
                 </a>
               </div>
             </div>

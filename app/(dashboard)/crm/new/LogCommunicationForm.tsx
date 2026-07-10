@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { invoiceEmailHtml } from '@/lib/email-client'
 import { useToast } from '@/components/ui/ToastProvider'
+import { Mail, Phone } from 'lucide-react'
 
 const CHANNELS = [
-  { value: 'email', label: '✉️ Email' },
-  { value: 'sms', label: '💬 SMS' },
-  { value: 'whatsapp', label: '📱 WhatsApp' },
-  { value: 'phone_call', label: '📞 Phone Call' },
-  { value: 'in_person', label: '🤝 In Person' },
-  { value: 'other', label: '📌 Other' },
+  { value: 'email', label: 'Email' },
+  { value: 'sms', label: 'SMS' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'phone_call', label: 'Phone Call' },
+  { value: 'in_person', label: 'In Person' },
+  { value: 'other', label: 'Other' },
 ]
 
 interface Props {
@@ -122,8 +123,8 @@ export default function LogCommunicationForm({ customers, orders, defaultCustome
         </select>
         {selectedCustomer && (
           <div className="mt-1.5 flex gap-3 text-xs text-gray-400">
-            {selectedCustomer.email && <span>✉️ {selectedCustomer.email}</span>}
-            {selectedCustomer.phone && <span>📞 {selectedCustomer.phone}</span>}
+            {selectedCustomer.email && <span className="flex items-center gap-1"><Mail size={12} /> {selectedCustomer.email}</span>}
+            {selectedCustomer.phone && <span className="flex items-center gap-1"><Phone size={12} /> {selectedCustomer.phone}</span>}
           </div>
         )}
       </div>
@@ -195,7 +196,7 @@ export default function LogCommunicationForm({ customers, orders, defaultCustome
           className="flex-1 bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm">
           {loading ? (sendingEmail ? 'Sending email...' : 'Saving...') : (
             form.channel === 'email' && form.direction === 'outbound' && selectedCustomer?.email
-              ? '✉️ Send & Log'
+              ? <span className="inline-flex items-center gap-1.5"><Mail size={14} /> Send & Log</span>
               : 'Save Communication'
           )}
         </button>

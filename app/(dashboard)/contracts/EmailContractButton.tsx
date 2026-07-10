@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useToast } from '@/components/ui/ToastProvider'
+import { Mail, MessageCircle } from 'lucide-react'
 
 interface Props {
   orderId: string
@@ -45,12 +46,12 @@ export default function EmailContractButton({ orderId, orderNumber, customerEmai
   return (
     <div className="inline-flex items-center gap-1.5">
       <button onClick={handleEmail} disabled={loading}
-        className="px-2.5 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-        {loading ? '…' : '📧 Email'}
+        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        {loading ? '…' : <><Mail size={12} /> Email</>}
       </button>
       <button onClick={handleWhatsApp}
-        className="px-2.5 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors">
-        💬 WhatsApp
+        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors">
+        <MessageCircle size={12} /> WhatsApp
       </button>
     </div>
   )

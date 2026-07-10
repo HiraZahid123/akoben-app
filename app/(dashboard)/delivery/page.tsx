@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import { formatDateTime } from '@/lib/utils'
 import LogWhatsAppButton from './LogWhatsAppButton'
+import { Package, PackageCheck, Printer } from 'lucide-react'
 
 export default async function DeliveryPage() {
   const supabase = await createServerSupabaseClient()
@@ -94,7 +95,7 @@ export default async function DeliveryPage() {
                       <td className="px-5 py-3 text-right">
                         <a href={`/delivery/pull/${o.id}`}
                           className="text-xs px-3 py-1.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
-                          📦 Open Pull Order
+                          <Package size={13} className="inline mr-1" /> Open Pull Order
                         </a>
                       </td>
                     </tr>
@@ -109,7 +110,7 @@ export default async function DeliveryPage() {
         <details className="bg-white rounded-xl border border-gray-200 overflow-hidden group" open={pulledOrderNumbers.length <= 5}>
           <summary className="cursor-pointer px-5 py-4 bg-gray-50 flex items-center justify-between select-none list-none">
             <span className="font-semibold text-gray-800 flex items-center gap-2">
-              📦 Pull Order Log
+              <Package size={16} /> Pull Order Log
               <span className="text-xs font-normal text-gray-400">({pulledOrderNumbers.length} order{pulledOrderNumbers.length === 1 ? '' : 's'})</span>
             </span>
             <span className="text-gray-400 text-sm group-open:rotate-180 transition-transform">▾</span>
@@ -149,7 +150,7 @@ export default async function DeliveryPage() {
                         <div className="flex items-center justify-end gap-2">
                           <a href={`/delivery/log/pull/${encodeURIComponent(orderNum)}`}
                             className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 font-medium rounded hover:bg-blue-200 transition-colors">
-                            🖨 View / Print
+                            <Printer size={12} className="inline mr-1" /> View / Print
                           </a>
                           <LogWhatsAppButton message={message} label="Send to Driver/Crew" />
                         </div>
@@ -166,7 +167,7 @@ export default async function DeliveryPage() {
         <details className="bg-white rounded-xl border border-gray-200 overflow-hidden group" open={returnedOrderNumbers.length <= 5}>
           <summary className="cursor-pointer px-5 py-4 bg-gray-50 flex items-center justify-between select-none list-none">
             <span className="font-semibold text-gray-800 flex items-center gap-2">
-              📥 Return Order Log
+              <PackageCheck size={16} className="inline mr-1" /> Return Order Log
               <span className="text-xs font-normal text-gray-400">({returnedOrderNumbers.length} order{returnedOrderNumbers.length === 1 ? '' : 's'})</span>
             </span>
             <span className="text-gray-400 text-sm group-open:rotate-180 transition-transform">▾</span>
@@ -198,7 +199,7 @@ export default async function DeliveryPage() {
                         <div className="flex items-center justify-end gap-2">
                           <a href={`/delivery/log/return/${encodeURIComponent(orderNum)}`}
                             className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 font-medium rounded hover:bg-blue-200 transition-colors">
-                            🖨 View / Print
+                            <Printer size={12} className="inline mr-1" /> View / Print
                           </a>
                           <LogWhatsAppButton message={message} label="Send to Driver/Crew" />
                         </div>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Badge from '@/components/ui/Badge'
 import { formatGHS } from '@/lib/utils'
 import type { InventoryAvailability, InventoryCategory } from '@/types/database'
+import { Package } from 'lucide-react'
 
 interface Props {
   items: InventoryAvailability[]
@@ -93,7 +94,9 @@ export default function InventoryTable({ items, categories }: Props) {
                       {(item as any).image_url ? (
                         <img src={(item as any).image_url} alt={item.name} className="w-9 h-9 rounded-lg object-cover shrink-0 border border-gray-100" />
                       ) : (
-                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 shrink-0 text-sm">📦</div>
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 shrink-0">
+                          <Package size={16} />
+                        </div>
                       )}
                       <div>
                         <div className="font-medium text-gray-900">{item.name}</div>

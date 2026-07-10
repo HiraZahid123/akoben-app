@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/ToastProvider'
 import Badge from '@/components/ui/Badge'
 import { ROLE_LABELS, MANAGER_CREATABLE_ROLES, roleHasOverridePrivilege, type UserRole } from '@/lib/permissions'
+import { Check } from 'lucide-react'
 
 interface StaffMember {
   id: string
@@ -196,10 +197,10 @@ export default function StaffManagement({ currentUserRole }: { currentUserRole: 
                       <span className="text-xs text-gray-400">Always allowed</span>
                     ) : (
                       <button onClick={() => toggleOverride(member)}
-                        className={`text-xs font-medium px-2 py-1 rounded-full transition-colors ${
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full transition-colors ${
                           member.can_override_payment ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                         }`}>
-                        {member.can_override_payment ? '✓ Granted' : 'Grant'}
+                        {member.can_override_payment ? <><Check size={11} /> Granted</> : 'Grant'}
                       </button>
                     )}
                   </td>

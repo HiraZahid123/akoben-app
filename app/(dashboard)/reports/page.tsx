@@ -5,19 +5,35 @@ import { getCurrentUserRole } from '@/lib/auth-role'
 import { getAllowedReportTypes, DAILY_ONLY_REVENUE_ROLES, type ReportType } from '@/lib/permissions'
 import PrintButton from './PrintButton'
 import EmailReportButton from './EmailReportButton'
+import {
+  DollarSign, Receipt, ClipboardList, Package, ClipboardCheck,
+  CircleDot, CheckCircle2, AlertTriangle, FlagTriangleRight, type LucideIcon,
+} from 'lucide-react'
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 const REPORT_TAB_LABELS: Record<ReportType, string> = {
-  revenue: '💰 Payment Report',
-  invoices: '🧾 Invoices',
-  orders: '📋 Orders',
-  inventory: '📦 Frequent Inventory',
-  audit: '📋 Inventory Audit',
-  partial: '🟠 Partial Payments',
-  full: '✅ Full Payments',
-  override: '⚠ Override Payments',
-  completed: '🏁 Completed Orders',
+  revenue: 'Payment Report',
+  invoices: 'Invoices',
+  orders: 'Orders',
+  inventory: 'Frequent Inventory',
+  audit: 'Inventory Audit',
+  partial: 'Partial Payments',
+  full: 'Full Payments',
+  override: 'Override Payments',
+  completed: 'Completed Orders',
+}
+
+const REPORT_TAB_ICONS: Record<ReportType, LucideIcon> = {
+  revenue: DollarSign,
+  invoices: Receipt,
+  orders: ClipboardList,
+  inventory: Package,
+  audit: ClipboardCheck,
+  partial: CircleDot,
+  full: CheckCircle2,
+  override: AlertTriangle,
+  completed: FlagTriangleRight,
 }
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ type?: string; report?: string; date?: string; month?: string; year?: string; from?: string; to?: string }> }) {
@@ -260,12 +276,15 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {/* Report type selector — tabs filtered to what this role is allowed to see */}
         {allowedReports.length > 1 && (
           <div className="print:hidden flex bg-white border border-gray-200 rounded-lg overflow-hidden w-fit flex-wrap">
-            {allowedReports.map(key => (
-              <a key={key} href={`/reports?${periodQuery}&report=${key}`}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${reportType === key ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-                {REPORT_TAB_LABELS[key]}
-              </a>
-            ))}
+            {allowedReports.map(key => {
+              const TabIcon = REPORT_TAB_ICONS[key]
+              return (
+                <a key={key} href={`/reports?${periodQuery}&report=${key}`}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${reportType === key ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  <TabIcon size={14} /> {REPORT_TAB_LABELS[key]}
+                </a>
+              )
+            })}
           </div>
         )}
 

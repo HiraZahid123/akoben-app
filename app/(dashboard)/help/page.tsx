@@ -1,10 +1,16 @@
 import PageHeader from '@/components/layout/PageHeader'
 import HelpAccordion from './HelpAccordion'
+import {
+  ClipboardList, MessageSquare, Package, Receipt, Calendar, Truck,
+  PackageCheck, Container, Tag, Archive, BarChart3, CreditCard,
+  Bookmark, Lightbulb, type LucideIcon,
+} from 'lucide-react'
 
-const sections = [
+const sections: { id: string; title: string; icon: LucideIcon; content?: string; steps?: { title: string; body: string }[] }[] = [
   {
     id: 'overview',
-    title: '📋 System Overview',
+    title: 'System Overview',
+    icon: ClipboardList,
     content: `Akoben Event Rentals is a full rental management system built for your business in Cape Coast, Ghana. It covers the complete lifecycle of every rental job — from quoting to delivery to return.
 
 The system is designed around a simple flow:
@@ -20,7 +26,8 @@ Every step is tracked so you always know what's out, what's been paid, and what'
   },
   {
     id: 'quotes',
-    title: '💬 Quotes',
+    title: 'Quotes',
+    icon: MessageSquare,
     steps: [
       { title: 'Create a Quote', body: 'Go to Quotes → New Quote. Fill in the customer details, event name, event date, pickup and return dates. Add the rental items and quantities. Fill in venue details (name, region, address) and the delivery/setup fee if applicable.' },
       { title: 'Send to Customer', body: 'Once the quote is saved, open it and click "Send to Customer" (Email) or the WhatsApp button. This sends the quote details to the customer. The status changes to Sent.' },
@@ -31,7 +38,8 @@ Every step is tracked so you always know what's out, what's been paid, and what'
   },
   {
     id: 'orders',
-    title: '📦 Orders',
+    title: 'Orders',
+    icon: Package,
     steps: [
       { title: 'Create an Order', body: 'Go to Orders → New Order. Select the customer, fill in event details, add rental items. You can also create an order directly by converting an accepted quote.' },
       { title: 'Order Statuses', body: 'Draft — order is being prepared. Sent — order sent to customer. Confirmed — customer confirmed / payment received. Returned — all items returned. Cancelled — order was cancelled.' },
@@ -42,7 +50,8 @@ Every step is tracked so you always know what's out, what's been paid, and what'
   },
   {
     id: 'invoices',
-    title: '🧾 Invoices',
+    title: 'Invoices',
+    icon: Receipt,
     steps: [
       { title: 'Invoice is Auto-Created', body: 'When you create an order, an invoice is automatically generated with the same items and totals. You do not need to create invoices manually.' },
       { title: 'Invoice Statuses', body: 'Unpaid — no payment received yet. Partially Paid — some payment received, balance remains. Fully Paid — total amount collected. Overdue — payment due date has passed. Sent — invoice has been emailed. Void — invoice cancelled.' },
@@ -55,7 +64,8 @@ Every step is tracked so you always know what's out, what's been paid, and what'
   },
   {
     id: 'calendar',
-    title: '📅 Calendar',
+    title: 'Calendar',
+    icon: Calendar,
     content: `The Calendar tab shows all booked events across their full rental period (from pickup date to return date).
 
 Each event block shows the customer name and event name. Events are only shown after the "Book Event" button has been clicked on the invoice — unconfirmed orders do not appear here.
@@ -64,7 +74,8 @@ Use the calendar to quickly see which days are busy and avoid double-booking.`,
   },
   {
     id: 'pull',
-    title: '🚚 Pull Order (Check Out)',
+    title: 'Pull Order (Check Out)',
+    icon: Truck,
     steps: [
       { title: 'When to Pull', body: 'Pull Order is used on the day items leave your store for the event. Go to the invoice, click "Pull Order".' },
       { title: 'Scan Items Out', body: 'On the Pull Order page you will see all items on the order. Use a barcode scanner (or type the barcode/unit number) to scan each item. The Scanned Checkout Qty updates as you scan.' },
@@ -74,7 +85,8 @@ Use the calendar to quickly see which days are busy and avoid double-booking.`,
   },
   {
     id: 'return',
-    title: '📥 Return Order (Check In)',
+    title: 'Return Order (Check In)',
+    icon: PackageCheck,
     steps: [
       { title: 'When to Return', body: 'Return Order is used when the customer brings items back. Go to Delivery tab and click "Return Order" next to the order, or click "Return Order" on the invoice.' },
       { title: 'Scan Items In', body: 'Scan each returning item\'s barcode. The Scanned Check-in Qty updates as you scan. Only items that were previously checked out will be accepted.' },
@@ -84,7 +96,8 @@ Use the calendar to quickly see which days are busy and avoid double-booking.`,
   },
   {
     id: 'delivery',
-    title: '🚛 Delivery Tab',
+    title: 'Delivery Tab',
+    icon: Container,
     content: `The Delivery tab is your log of all item movements.
 
 Check-Out Logs — grouped by order number, shows every item that was scanned out via Pull Order. Each group has a "Return Order" button for easy access.
@@ -95,7 +108,8 @@ Use this tab to quickly verify what's out in the field and what has come back.`,
   },
   {
     id: 'inventory',
-    title: '🏷️ Inventory',
+    title: 'Inventory',
+    icon: Tag,
     steps: [
       { title: 'Add an Item', body: 'Go to Inventory → New Item. Fill in the name, category, SKU, and daily rental rate. Save the item.' },
       { title: 'Add Units', body: 'Each item can have multiple physical units (e.g., 10 chairs of the same model). Open the item and add units with individual barcodes or unit numbers. Each unit is tracked separately.' },
@@ -105,7 +119,8 @@ Use this tab to quickly verify what's out in the field and what has come back.`,
   },
   {
     id: 'backoffice',
-    title: '🗄️ Back Office',
+    title: 'Back Office',
+    icon: Archive,
     content: `The Back Office tab is a document store for your business files.
 
 Upload documents such as rental agreements, customer contracts, forms, templates, and policies. Files are stored securely and can be downloaded at any time.
@@ -116,7 +131,8 @@ To upload: click "Upload Document", select your file, give it a name and categor
   },
   {
     id: 'reports',
-    title: '📈 Reports',
+    title: 'Reports',
+    icon: BarChart3,
     content: `The Reports tab gives you a financial summary of payments collected.
 
 Daily Report — select a specific date to see all payments received that day. Shows total revenue, number of orders, and average payment.
@@ -127,7 +143,8 @@ All figures are based on actual payments recorded in the system.`,
   },
   {
     id: 'payments',
-    title: '💳 Payment Methods',
+    title: 'Payment Methods',
+    icon: CreditCard,
     content: `The system supports the following payment methods:
 
 • Cash
@@ -142,7 +159,8 @@ Select the correct method when recording a payment so your records stay accurate
   },
   {
     id: 'statuses',
-    title: '🔖 Status Reference',
+    title: 'Status Reference',
+    icon: Bookmark,
     content: `ORDER STATUSES
 • Draft — being prepared, not yet sent
 • Sent — sent to customer, awaiting confirmation
@@ -166,7 +184,8 @@ INVENTORY UNIT STATUSES
   },
   {
     id: 'tips',
-    title: '💡 Tips & Best Practices',
+    title: 'Tips & Best Practices',
+    icon: Lightbulb,
     content: `1. Always book the event (click "Book Event") once a 50% deposit is received — this adds it to the Calendar and prevents double-booking.
 
 2. Run the Pull Order scan before the customer picks up items. Never skip scanning — it keeps your inventory accurate.
@@ -196,17 +215,20 @@ export default function HelpPage() {
           <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 mb-6">
             <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-3">Jump to section</p>
             <div className="flex flex-wrap gap-2">
-              {sections.map(s => (
-                <a key={s.id} href={`#${s.id}`}
-                  className="text-xs px-3 py-1 bg-white border border-orange-200 text-orange-700 rounded-full hover:bg-orange-100 transition-colors">
-                  {s.title}
-                </a>
-              ))}
+              {sections.map(s => {
+                const Icon = s.icon
+                return (
+                  <a key={s.id} href={`#${s.id}`}
+                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1 bg-white border border-orange-200 text-orange-700 rounded-full hover:bg-orange-100 transition-colors">
+                    <Icon size={12} /> {s.title}
+                  </a>
+                )
+              })}
             </div>
           </div>
 
           {sections.map(section => (
-            <HelpAccordion key={section.id} id={section.id} title={section.title} content={section.content} steps={section.steps} />
+            <HelpAccordion key={section.id} id={section.id} title={section.title} icon={section.icon} content={section.content} steps={section.steps} />
           ))}
 
           <div className="text-center text-xs text-gray-400 pt-4 pb-8">

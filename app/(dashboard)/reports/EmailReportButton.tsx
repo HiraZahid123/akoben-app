@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useToast } from '@/components/ui/ToastProvider'
+import { Mail } from 'lucide-react'
 
 interface Props {
   title: string
@@ -36,8 +37,8 @@ export default function EmailReportButton({ title, subtitle, columns, rows }: Pr
 
   return (
     <button onClick={handleSend} disabled={loading || rows.length === 0}
-      className="print:hidden px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-      {loading ? 'Sending…' : '📧 Email PDF'}
+      className="print:hidden inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+      {loading ? 'Sending…' : <><Mail size={14} /> Email PDF</>}
     </button>
   )
 }

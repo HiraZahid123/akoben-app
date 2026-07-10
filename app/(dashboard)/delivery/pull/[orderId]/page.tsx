@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import { notFound } from 'next/navigation'
 import PullOrderSheet from './PullOrderSheet'
+import { Lock } from 'lucide-react'
 
 export default async function PullOrderPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params
@@ -42,7 +43,7 @@ export default async function PullOrderPage({ params }: { params: Promise<{ orde
       <div className="p-6">
         {!isActiveYet ? (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 max-w-2xl text-center">
-            <div className="text-3xl mb-2">🔒</div>
+            <Lock size={28} className="mx-auto mb-2 text-amber-500" strokeWidth={1.5} />
             <h2 className="text-lg font-bold text-gray-900 mb-1">Pull Order Not Yet Active</h2>
             <p className="text-sm text-gray-600">
               This order's pickup date is <strong>{new Date(order.pickup_date).toLocaleDateString()}</strong>.

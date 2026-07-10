@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { invoiceEmailHtml } from '@/lib/email-client'
 import { useToast } from '@/components/ui/ToastProvider'
 import type { InvoiceStatus } from '@/types/database'
+import { Mail, MessageCircle, Link2, Download } from 'lucide-react'
 
 interface InvoiceLineItem { name: string; quantity: number; lineTotal: number }
 
@@ -96,23 +97,23 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
       {currentStatus !== 'paid' && currentStatus !== 'void' && (
         <>
           <button onClick={sendInvoiceEmail} disabled={loading}
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-            {loading ? '...' : '📧 Email Invoice'}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            {loading ? '...' : <><Mail size={14} /> Email Invoice</>}
           </button>
           <button onClick={sendWhatsApp}
-            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors">
-            💬 WhatsApp
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors">
+            <MessageCircle size={14} /> WhatsApp
           </button>
           <button onClick={sendPaystackLink} disabled={loading}
-            className="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
             title="Send a Paystack payment link to the customer">
-            {loading ? '...' : '🔗 Send Payment Link'}
+            {loading ? '...' : <><Link2 size={14} /> Send Payment Link</>}
           </button>
         </>
       )}
       <a href={`/api/pdf/invoice/${invoiceId}`} target="_blank"
-        className="px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
-        ⬇ PDF
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
+        <Download size={14} /> PDF
       </a>
     </div>
   )

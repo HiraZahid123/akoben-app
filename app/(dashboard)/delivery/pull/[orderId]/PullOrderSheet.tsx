@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
+import { CheckCircle2, Check, AlertTriangle, ScanLine } from 'lucide-react'
 
 interface Unit { id: string; unit_number: string | null; barcode: string | null; status: string; condition: string }
 interface OrderItem {
@@ -163,7 +164,7 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
   if (submitted) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-10 text-center max-w-2xl">
-        <div className="text-4xl mb-3">✅</div>
+        <CheckCircle2 size={40} className="mx-auto mb-3 text-green-500" strokeWidth={1.5} />
         <h2 className="text-xl font-bold text-gray-900 mb-1">Pull Order Confirmed</h2>
         <p className="text-gray-500 text-sm">Items marked as out. Redirecting to Delivery log...</p>
       </div>
@@ -197,8 +198,8 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
             placeholder="Scan or type barcode / unit number..."
             className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-            ✓ Scan
+          <button type="submit" className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+            <ScanLine size={14} /> Scan
           </button>
         </form>
         <p className="text-xs text-gray-400 mt-2">Or use the manual +/− buttons in the table below</p>
@@ -245,7 +246,7 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
                       </span>
                       <button onClick={() => manualSetQty(item.id, Math.min(available, scanned + 1))}
                         className="w-6 h-6 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm">+</button>
-                      {done && <span className="text-green-500 text-xs">✓</span>}
+                      {done && <Check size={14} className="text-green-500" />}
                     </div>
                     {available < item.quantity && (
                       <div className="text-xs text-amber-600 mt-0.5">Only {available} available</div>
@@ -258,9 +259,10 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
         </table>
         <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 space-y-3">
           {/* Payment gate */}
-          <div className={`rounded-lg px-4 py-2.5 text-sm flex items-center justify-between ${isFullyPaid ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-            <span>
-              {isFullyPaid ? '✓ Invoice fully paid — order can be released' : `⚠ Balance of GHS ${balanceDue.toFixed(2)} still due — order cannot be released without payment`}
+          <div className={`rounded-lg px-4 py-2.5 text-sm flex items-center gap-1.5 justify-between ${isFullyPaid ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <span className="inline-flex items-center gap-1.5">
+              {isFullyPaid ? <Check size={14} /> : <AlertTriangle size={14} />}
+              {isFullyPaid ? 'Invoice fully paid — order can be released' : `Balance of GHS ${balanceDue.toFixed(2)} still due — order cannot be released without payment`}
             </span>
           </div>
 
@@ -274,14 +276,14 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm text-gray-500">
               {totalScanned === totalOrdered
-                ? <span className="text-green-600 font-medium">✓ All items accounted for</span>
+                ? <span className="inline-flex items-center gap-1 text-green-600 font-medium"><Check size={14} /> All items accounted for</span>
                 : <span className="text-amber-600">{totalOrdered - totalScanned} item(s) still need scanning</span>}
             </div>
             <button
               onClick={confirmPull}
               disabled={loading || totalScanned === 0 || (!isFullyPaid && !useOverride)}
-              className="px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
-              {loading ? 'Processing...' : '✓ Confirm Pull Order'}
+              className="inline-flex items-center gap-1.5 px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
+              {loading ? 'Processing...' : <><Check size={14} /> Confirm Pull Order</>}
             </button>
           </div>
         </div>

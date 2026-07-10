@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, GHANA_REGIONS, GHANA_VAT_RATE } from '@/lib/utils'
 import { useToast } from '@/components/ui/ToastProvider'
+import { Phone, Calendar } from 'lucide-react'
 
 interface CustomerOption { id: string; full_name: string; company_name: string | null; phone: string | null; discount_pct: number }
 interface ItemOption { id: string; name: string; sku: string | null; rate_daily: number; quantity_available: number; category_name: string | null }
@@ -218,7 +219,7 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
               ))}
             </select>
             {selectedCustomer?.phone && (
-              <p className="text-xs text-gray-500">📞 {selectedCustomer.phone}</p>
+              <p className="text-xs text-gray-500 flex items-center gap-1"><Phone size={11} /> {selectedCustomer.phone}</p>
             )}
           </div>
 
@@ -258,7 +259,7 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
               </div>
               {rentalDays > 0 && (
                 <div className="col-span-2">
-                  <p className="text-xs text-blue-600 font-medium">📅 {rentalDays} rental day{rentalDays !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-blue-600 font-medium flex items-center gap-1"><Calendar size={12} /> {rentalDays} rental day{rentalDays !== 1 ? 's' : ''}</p>
                 </div>
               )}
             </div>

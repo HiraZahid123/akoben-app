@@ -3,15 +3,7 @@
 import { useState } from 'react'
 import Badge from '@/components/ui/Badge'
 import { formatDateTime } from '@/lib/utils'
-
-const CHANNEL_ICONS: Record<string, string> = {
-  email: '✉️',
-  sms: '💬',
-  whatsapp: '📱',
-  phone_call: '📞',
-  in_person: '🤝',
-  other: '📌',
-}
+import { ChannelIcon } from '@/lib/channelIcons'
 
 const CHANNEL_LABELS: Record<string, string> = {
   email: 'Email',
@@ -92,7 +84,7 @@ export default function CRMTable({ logs, customers }: { logs: any[]; customers: 
                   </td>
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-1.5">
-                      <span>{CHANNEL_ICONS[log.channel] ?? '📌'}</span>
+                      <ChannelIcon channel={log.channel} size={14} className="text-gray-400" />
                       <span className="text-gray-700">{CHANNEL_LABELS[log.channel] ?? log.channel}</span>
                     </span>
                   </td>

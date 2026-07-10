@@ -1,5 +1,7 @@
 'use client'
 
+import { MessageCircle } from 'lucide-react'
+
 interface Props {
   // Kept for backwards compatibility but intentionally unused as a default —
   // this button sends to a driver/crew member, not the customer on file.
@@ -18,8 +20,8 @@ export default function LogWhatsAppButton({ message, label = 'WhatsApp' }: Props
 
   return (
     <button onClick={send}
-      className="text-xs px-2.5 py-1 bg-green-100 text-green-700 font-medium rounded hover:bg-green-200 transition-colors">
-      💬 {label}
+      className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-green-100 text-green-700 font-medium rounded hover:bg-green-200 transition-colors">
+      <MessageCircle size={12} /> {label}
     </button>
   )
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
+import { CalendarCheck, AlertTriangle, Package, PackageCheck } from 'lucide-react'
 
 interface Props {
   invoiceId: string
@@ -82,15 +83,15 @@ export default function InvoiceBookingActions({ invoiceId, orderId, invoiceNumbe
       <div className="flex flex-col gap-2">
         {!booked && depositMet && (
           <button onClick={bookEvent} disabled={loading}
-            className="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-            {loading ? '...' : '📅 Book Event'}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+            {loading ? '...' : <><CalendarCheck size={14} /> Book Event</>}
           </button>
         )}
         {!booked && !depositMet && canOverride && (
           <button onClick={bookEventWithOverride} disabled={loading}
-            className="px-3 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors"
             title="Manager override — books the event despite less than 50% deposit. Sends an email notification to Irene.">
-            {loading ? '...' : '⚠ Override 50% & Book'}
+            {loading ? '...' : <><AlertTriangle size={14} /> Override 50% & Book</>}
           </button>
         )}
         {!booked && !depositMet && !canOverride && (
@@ -99,12 +100,12 @@ export default function InvoiceBookingActions({ invoiceId, orderId, invoiceNumbe
         {booked && (
           <>
             <a href={`/delivery/pull/${orderId}`}
-              className="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors text-center">
-              📦 Pull Order
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors text-center">
+              <Package size={14} /> Pull Order
             </a>
             <a href={`/delivery/return/${orderId}`}
-              className="px-3 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors text-center">
-              📥 Return Order
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors text-center">
+              <PackageCheck size={14} /> Return Order
             </a>
           </>
         )}

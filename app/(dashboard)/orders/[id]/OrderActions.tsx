@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
 import type { OrderStatus } from '@/types/database'
+import { Receipt, FileText, Mail, MessageCircle, Ban } from 'lucide-react'
 
 const TRANSITIONS: Partial<Record<OrderStatus, { label: string; next: OrderStatus; color: string }[]>> = {
   draft:     [{ label: 'Confirm Order', next: 'confirmed', color: 'bg-green-600 hover:bg-green-700' }],
@@ -117,28 +118,28 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
         Edit
       </a>
       <button onClick={generateInvoice} disabled={loading}
-        className="px-3 py-1.5 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors">
-        {loading ? '...' : '🧾 Invoice'}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors">
+        {loading ? '...' : <><Receipt size={14} /> Invoice</>}
       </button>
       <a href={`/api/pdf/contract/${orderId}`} target="_blank"
-        className="px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
-        📄 Contract
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
+        <FileText size={14} /> Contract
       </a>
       <button onClick={sendEmail} disabled={loading}
-        className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-        {loading ? '...' : '📧 Email'}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        {loading ? '...' : <><Mail size={14} /> Email</>}
       </button>
       {customerPhone && (
         <button onClick={sendWhatsApp}
-          className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
-          💬 WhatsApp
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
+          <MessageCircle size={14} /> WhatsApp
         </button>
       )}
       {currentStatus !== 'cancelled' && currentStatus !== 'returned' && currentStatus !== 'complete' && (
         <button onClick={voidOrder} disabled={loading}
-          className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
           title="Void this order — marks it as cancelled for traceability">
-          {loading ? '...' : '⊘ Void Order'}
+          {loading ? '...' : <><Ban size={14} /> Void Order</>}
         </button>
       )}
     </div>

@@ -3,6 +3,7 @@ import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
 import { formatDate } from '@/lib/utils'
 import EmailContractButton from './EmailContractButton'
+import { Download } from 'lucide-react'
 export default async function ContractsPage() {
   const supabase = await createServerSupabaseClient()
 
@@ -68,7 +69,7 @@ export default async function ContractsPage() {
                           target="_blank"
                           className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white text-xs font-medium rounded-lg hover:bg-gray-900 transition-colors"
                         >
-                          📄 Download
+                          <Download size={12} /> Download
                         </a>
                         <EmailContractButton
                           orderId={order.id}
