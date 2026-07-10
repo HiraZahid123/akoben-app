@@ -41,16 +41,15 @@ export default async function BackOfficePage({ searchParams }: { searchParams: P
   const activeCategory = sp.category ?? 'all'
   const supabase = await createServerSupabaseClient()
 
-  const query = supabase
+  const { data: allDocs } = await supabase
     .from('backoffice_documents')
     .select('*')
     .order('created_at', { ascending: false })
 
-  const { data: docs } = activeCategory === 'all'
-    ? await query
-    : await query.eq('category', activeCategory)
+  const docs = activeCategory === 'all'
+    ? allDocs
+    : (allDocs ?? []).filter(d => d.category === activeCategory)
 
-  const { data: allDocs } = await supabase.from('backoffice_documents').select('category')
   const countByCategory: Record<string, number> = { all: allDocs?.length ?? 0 }
   for (const doc of allDocs ?? []) {
     countByCategory[doc.category] = (countByCategory[doc.category] ?? 0) + 1

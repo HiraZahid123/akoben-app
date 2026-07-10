@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Badge from '@/components/ui/Badge'
+import Pagination from '@/components/ui/Pagination'
 import { formatDateTime } from '@/lib/utils'
 import { ChannelIcon } from '@/lib/channelIcons'
+
+const PAGE_SIZE = 20
 
 const CHANNEL_LABELS: Record<string, string> = {
   email: 'Email',
@@ -18,6 +21,7 @@ export default function CRMTable({ logs, customers }: { logs: any[]; customers: 
   const [search, setSearch] = useState('')
   const [channelFilter, setChannelFilter] = useState('all')
   const [customerFilter, setCustomerFilter] = useState('all')
+  const [page, setPage] = useState(1)
 
   const filtered = logs.filter(l => {
     const name = (l.customers?.full_name ?? '').toLowerCase()
@@ -28,6 +32,10 @@ export default function CRMTable({ logs, customers }: { logs: any[]; customers: 
     const matchCustomer = customerFilter === 'all' || l.customer_id === customerFilter
     return matchSearch && matchChannel && matchCustomer
   })
+
+  useEffect(() => { setPage(1) }, [search, channelFilter, customerFilter])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   const channels = ['email', 'sms', 'whatsapp', 'phone_call', 'in_person', 'other']
 
@@ -71,7 +79,7 @@ export default function CRMTable({ logs, customers }: { logs: any[]; customers: 
             <tbody className="divide-y divide-gray-50">
               {filtered.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">No communications found</td></tr>
-              ) : filtered.map(log => (
+              ) : paged.map(log => (
                 <tr key={log.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(log.created_at)}</td>
                   <td className="px-4 py-3">
@@ -106,6 +114,7 @@ export default function CRMTable({ logs, customers }: { logs: any[]; customers: 
             </tbody>
           </table>
         </div>
+        <Pagination page={page} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </div>
   )

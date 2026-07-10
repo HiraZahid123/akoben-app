@@ -1,12 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Badge from '@/components/ui/Badge'
+import Pagination from '@/components/ui/Pagination'
 import { formatGHS, formatDate } from '@/lib/utils'
 import type { Customer } from '@/types/database'
 
+const PAGE_SIZE = 20
+
 export default function CustomersTable({ customers, canEdit = true }: { customers: Customer[]; canEdit?: boolean }) {
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
 
   const filtered = customers.filter(c =>
     c.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -14,6 +18,10 @@ export default function CustomersTable({ customers, canEdit = true }: { customer
     (c.phone ?? '').includes(search) ||
     (c.company_name ?? '').toLowerCase().includes(search.toLowerCase())
   )
+
+  useEffect(() => { setPage(1) }, [search])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -46,7 +54,7 @@ export default function CustomersTable({ customers, canEdit = true }: { customer
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-gray-400">No customers found</td>
               </tr>
-            ) : filtered.map(c => (
+            ) : paged.map(c => (
               <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
                   <div className="font-medium text-gray-900">{c.full_name}</div>
@@ -80,6 +88,7 @@ export default function CustomersTable({ customers, canEdit = true }: { customer
           </tbody>
         </table>
       </div>
+      <Pagination page={page} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   )
 }

@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Badge from '@/components/ui/Badge'
+import Pagination from '@/components/ui/Pagination'
 import { formatGHS, formatDate } from '@/lib/utils'
 import type { InvoiceStatus } from '@/types/database'
+
+const PAGE_SIZE = 20
 
 const STATUS_VARIANTS: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
   draft: 'default', sent: 'info', unpaid: 'warning', partial: 'purple',
@@ -21,6 +24,7 @@ const FILTER_STATUSES: InvoiceStatus[] = ['unpaid', 'partial', 'paid', 'overdue'
 export default function InvoicesTable({ invoices }: { invoices: any[] }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all')
+  const [page, setPage] = useState(1)
 
   const filtered = invoices.filter(inv => {
     const matchSearch =
@@ -29,6 +33,10 @@ export default function InvoicesTable({ invoices }: { invoices: any[] }) {
     const matchStatus = statusFilter === 'all' || inv.status === statusFilter
     return matchSearch && matchStatus
   })
+
+  useEffect(() => { setPage(1) }, [search, statusFilter])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -65,7 +73,7 @@ export default function InvoicesTable({ invoices }: { invoices: any[] }) {
           <tbody className="divide-y divide-gray-50">
             {filtered.length === 0 ? (
               <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No invoices found</td></tr>
-            ) : filtered.map(inv => (
+            ) : paged.map(inv => (
               <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
                   <a href={`/invoices/${inv.id}`} className="font-medium text-blue-600 hover:text-blue-700">{inv.invoice_number}</a>
@@ -95,6 +103,7 @@ export default function InvoicesTable({ invoices }: { invoices: any[] }) {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   )
 }

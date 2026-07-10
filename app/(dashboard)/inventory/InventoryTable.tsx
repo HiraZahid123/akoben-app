@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Badge from '@/components/ui/Badge'
+import Pagination from '@/components/ui/Pagination'
 import { formatGHS } from '@/lib/utils'
 import type { InventoryAvailability, InventoryCategory } from '@/types/database'
 import { Package } from 'lucide-react'
+
+const PAGE_SIZE = 20
 
 interface Props {
   items: InventoryAvailability[]
@@ -33,6 +36,7 @@ function conditionBadge(condition: string) {
 export default function InventoryTable({ items, categories, canEdit = true }: Props) {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [page, setPage] = useState(1)
 
   const filtered = items.filter(item => {
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -40,6 +44,10 @@ export default function InventoryTable({ items, categories, canEdit = true }: Pr
     const matchCat = categoryFilter === 'all' || item.category_id === categoryFilter
     return matchSearch && matchCat
   })
+
+  useEffect(() => { setPage(1) }, [search, categoryFilter])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -88,7 +96,7 @@ export default function InventoryTable({ items, categories, canEdit = true }: Pr
                 </td>
               </tr>
             ) : (
-              filtered.map(item => (
+              paged.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -149,6 +157,7 @@ export default function InventoryTable({ items, categories, canEdit = true }: Pr
           </tbody>
         </table>
       </div>
+      <Pagination page={page} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   )
 }

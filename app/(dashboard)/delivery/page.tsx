@@ -15,17 +15,24 @@ export default async function DeliveryPage() {
     .not('status', 'in', '(cancelled,returned)')
     .order('pickup_date')
 
-  // Fetch all pull order checkout logs
+  // Fetch pull/return scan logs from the last 6 months — older activity is archival and
+  // would otherwise mean this append-only log grows unbounded on every page load.
+  const sixMonthsAgo = new Date()
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  const sinceIso = sixMonthsAgo.toISOString()
+
   const { data: checkouts } = await supabase
     .from('barcode_scan_log')
     .select('id, scanned_at, result')
     .eq('action', 'checkout')
     .like('result', 'pull_order:%')
+    .gte('scanned_at', sinceIso)
 
   const { data: checkins } = await supabase
     .from('barcode_scan_log')
     .select('id, scanned_at, result')
     .eq('action', 'checkin')
+    .gte('scanned_at', sinceIso)
 
   // Group checkouts by order number
   const outByOrder: Record<string, { count: number; lastScanned: string }> = {}

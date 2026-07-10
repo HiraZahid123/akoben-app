@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Badge from '@/components/ui/Badge'
+import Pagination from '@/components/ui/Pagination'
 import { formatGHS, formatDate, ORDER_STATUS_COLORS } from '@/lib/utils'
 import type { OrderWithCustomer, OrderStatus } from '@/types/database'
+
+const PAGE_SIZE = 20
 
 const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
   draft:     'default',
@@ -27,6 +30,7 @@ const FILTER_STATUSES: OrderStatus[] = ['draft', 'quote', 'confirmed', 'cancelle
 export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: OrderWithCustomer[]; quoteByOrderId?: Record<string, { id: string; quote_number: string }> }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
+  const [page, setPage] = useState(1)
 
   const filtered = orders.filter(o => {
     const matchSearch =
@@ -36,6 +40,10 @@ export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: O
     const matchStatus = statusFilter === 'all' || o.status === statusFilter
     return matchSearch && matchStatus
   })
+
+  useEffect(() => { setPage(1) }, [search, statusFilter])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -89,7 +97,7 @@ export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: O
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-gray-400">No orders found</td>
               </tr>
-            ) : filtered.map(o => (
+            ) : paged.map(o => (
               <tr key={o.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
                   <a href={`/orders/${o.id}`} className="font-medium text-blue-600 hover:text-blue-700">
@@ -125,6 +133,7 @@ export default function OrdersTable({ orders, quoteByOrderId = {} }: { orders: O
           </tbody>
         </table>
       </div>
+      <Pagination page={page} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   )
 }
