@@ -68,6 +68,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         }
       />
 
+      {/* Manager override indicators — auto-clear once payment reaches the required threshold */}
+      {(order as any).booked_via_override && order.amount_paid < order.total * 0.5 && (
+        <div className="mx-6 mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium rounded-lg px-4 py-2.5">
+          <AlertTriangle size={15} className="shrink-0" />
+          Manager Override — Booking confirmed below required payment.
+        </div>
+      )}
+      {(order as any).released_via_override && order.balance_due > 0.01 && (
+        <div className="mx-6 mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium rounded-lg px-4 py-2.5">
+          <AlertTriangle size={15} className="shrink-0" />
+          Manager Override — Released prior to full payment.
+        </div>
+      )}
+
       <div className="p-6 grid grid-cols-3 gap-6 max-w-6xl">
         {/* Main content */}
         <div className="col-span-2 space-y-5">

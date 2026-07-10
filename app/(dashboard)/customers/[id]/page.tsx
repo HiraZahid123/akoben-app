@@ -5,10 +5,14 @@ import { formatDate, formatDateTime, formatGHS, PAYMENT_METHOD_LABELS } from '@/
 import { notFound } from 'next/navigation'
 import { ChannelIcon } from '@/lib/channelIcons'
 import { Phone, Mail, MessageCircle } from 'lucide-react'
+import { getCurrentUserRole } from '@/lib/auth-role'
+import { getModuleAccess } from '@/lib/permissions'
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
+  const role = await getCurrentUserRole()
+  const canEdit = getModuleAccess(role, 'customers') === 'full'
 
   const [r1, r2, r3] = await Promise.all([
     supabase.from('customers').select('*').eq('id', id).single(),
@@ -37,10 +41,12 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
               + Log Communication
             </a>
-            <a href={`/customers/${id}/edit`}
-              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-              Edit
-            </a>
+            {canEdit && (
+              <a href={`/customers/${id}/edit`}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                Edit
+              </a>
+            )}
           </div>
         }
       />

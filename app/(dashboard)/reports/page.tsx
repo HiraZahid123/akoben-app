@@ -310,7 +310,17 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">Payment Report — {periodLabel}</div>
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+                <span className="font-semibold text-gray-800">Payment Report — {periodLabel}</span>
+                <div className="flex items-center gap-2">
+                  <EmailReportButton
+                    title="Payment Report" subtitle={periodLabel}
+                    columns={['Date', 'Customer', 'Order', 'Method', 'Reference', 'Amount']}
+                    rows={payments.map((p: any) => [formatDateTime(p.created_at), p.customers?.full_name ?? '—', p.orders?.order_number ?? '—', (p.method ?? '').replace(/_/g, ' '), p.reference ?? '—', formatGHS(p.amount)])}
+                  />
+                  <PrintButton />
+                </div>
+              </div>
               {payments.length === 0 ? (
                 <p className="px-5 py-10 text-center text-gray-400 text-sm">No payments recorded for this period.</p>
               ) : (
@@ -352,9 +362,19 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {/* Invoice report */}
         {reportType === 'invoices' && (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <span className="font-semibold text-gray-800">Invoice Report — {periodLabel}</span>
-              <span className="text-sm text-gray-500">{invoices.length} invoice(s) — {formatGHS(totalInvoiced)} total</span>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <div>
+                <span className="font-semibold text-gray-800">Invoice Report — {periodLabel}</span>
+                <span className="text-sm text-gray-500 ml-3">{invoices.length} invoice(s) — {formatGHS(totalInvoiced)} total</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Invoice Report" subtitle={periodLabel}
+                  columns={['Invoice #', 'Customer', 'Order', 'Status', 'Total', 'Balance']}
+                  rows={invoices.map((inv: any) => [inv.invoice_number, inv.customers?.full_name ?? '—', inv.orders?.order_number ?? '—', inv.status, formatGHS(inv.total), formatGHS(inv.balance_due)])}
+                />
+                <PrintButton />
+              </div>
             </div>
             {invoices.length === 0 ? (
               <p className="px-5 py-10 text-center text-gray-400 text-sm">No invoices created in this period.</p>
@@ -392,9 +412,19 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {/* Order report */}
         {reportType === 'orders' && (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <span className="font-semibold text-gray-800">Order Report — {periodLabel}</span>
-              <span className="text-sm text-gray-500">{orders.length} order(s)</span>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <div>
+                <span className="font-semibold text-gray-800">Order Report — {periodLabel}</span>
+                <span className="text-sm text-gray-500 ml-3">{orders.length} order(s)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Order Report" subtitle={periodLabel}
+                  columns={['Order #', 'Customer', 'Event', 'Status', 'Total']}
+                  rows={orders.map((o: any) => [o.order_number, o.customer_name, o.event_name, o.status, formatGHS(o.total)])}
+                />
+                <PrintButton />
+              </div>
             </div>
             {orders.length === 0 ? (
               <p className="px-5 py-10 text-center text-gray-400 text-sm">No orders created in this period.</p>
@@ -430,8 +460,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {/* Frequent inventory report */}
         {reportType === 'inventory' && (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">
-              Frequent Inventory Order Report — {periodLabel}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
+              <span className="font-semibold text-gray-800">Frequent Inventory Order Report — {periodLabel}</span>
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Frequent Inventory Order Report" subtitle={periodLabel}
+                  columns={['Rank', 'Item', 'SKU', '# Orders', 'Total Qty Ordered']}
+                  rows={inventoryRows.map((row, i) => [`#${i + 1}`, row.name, row.sku ?? '—', String(row.orderCount), String(row.totalQty)])}
+                />
+                <PrintButton />
+              </div>
             </div>
             {inventoryRows.length === 0 ? (
               <p className="px-5 py-10 text-center text-gray-400 text-sm">No items ordered in this period.</p>
@@ -466,7 +504,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between print:border-b-2 print:border-gray-900">
               <span className="font-semibold text-gray-800">Inventory Audit Report — {new Date().toLocaleDateString()}</span>
-              <PrintButton />
+              <div className="flex items-center gap-2">
+                <EmailReportButton
+                  title="Inventory Audit Report" subtitle={new Date().toLocaleDateString()}
+                  columns={['Item', 'Category', 'Location', 'Available', 'Actual Count']}
+                  rows={auditRows.map(row => [row.name, row.category ?? '—', row.location ?? '—', String(row.available), ''])}
+                />
+                <PrintButton />
+              </div>
             </div>
             {auditRows.length === 0 ? (
               <p className="px-5 py-10 text-center text-gray-400 text-sm">No inventory items found.</p>

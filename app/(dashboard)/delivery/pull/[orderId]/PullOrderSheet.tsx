@@ -41,9 +41,13 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
 
   const isFullyPaid = balanceDue <= 0.01
   const [useOverride, setUseOverride] = useState(false)
+  const [staffName, setStaffName] = useState('Unknown staff')
 
   useEffect(() => {
-    fetch('/api/me').then(r => r.json()).then(d => setCanOverride(!!d.canOverridePayment)).catch(() => {})
+    fetch('/api/me').then(r => r.json()).then(d => {
+      setCanOverride(!!d.canOverrideBookingRelease)
+      setStaffName(d.fullName ?? 'Unknown staff')
+    }).catch(() => {})
   }, [])
 
   // Flat map: barcode/unit_number → unit + item
@@ -135,18 +139,25 @@ export default function PullOrderSheet({ order, items, invoiceNumber, balanceDue
       }
       await supabase.from('orders').update({
         status: 'active',
-        ...(useOverride ? { pulled_via_override: true } : {}),
+        ...(useOverride ? { pulled_via_override: true, released_via_override: true } : {}),
       }).eq('id', order.id)
 
       if (useOverride) {
+        const amountPaid = invoiceTotal - balanceDue
         // Fire-and-forget — don't block the save on the email round-trip
         fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: 'irenebaidoo.agyapong@gmail.com',
-            subject: `50% Override Used — Pull Order ${order.order_number}`,
-            html: `<p>A manager used the override to release <strong>${order.order_number}</strong> (${order.customer_name}) with a pending balance.</p><p>Balance due at release: GHS ${balanceDue.toFixed(2)} of GHS ${invoiceTotal.toFixed(2)}.</p>`,
+            subject: `Manager Override Used — ${order.order_number}`,
+            html: `<p>A manager override was used to release <strong>${order.order_number}</strong> with a pending balance.</p>
+              <p><strong>Customer:</strong> ${order.customer_name}</p>
+              <p><strong>Order total:</strong> GHS ${invoiceTotal.toFixed(2)}</p>
+              <p><strong>Amount paid:</strong> GHS ${amountPaid.toFixed(2)}</p>
+              <p><strong>Amount outstanding:</strong> GHS ${balanceDue.toFixed(2)}</p>
+              <p><strong>Authorized by:</strong> ${staffName}</p>
+              <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>`,
           }),
         }).catch(() => {})
       }

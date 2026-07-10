@@ -5,7 +5,7 @@ import Badge from '@/components/ui/Badge'
 import { formatGHS, formatDate } from '@/lib/utils'
 import type { Customer } from '@/types/database'
 
-export default function CustomersTable({ customers }: { customers: Customer[] }) {
+export default function CustomersTable({ customers, canEdit = true }: { customers: Customer[]; canEdit?: boolean }) {
   const [search, setSearch] = useState('')
 
   const filtered = customers.filter(c =>
@@ -67,8 +67,12 @@ export default function CustomersTable({ customers }: { customers: Customer[] })
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <a href={`/customers/${c.id}`} className="text-xs text-blue-600 hover:text-blue-700 font-medium">View</a>
-                    <span className="text-gray-300">|</span>
-                    <a href={`/customers/${c.id}/edit`} className="text-xs text-gray-600 hover:text-gray-700 font-medium">Edit</a>
+                    {canEdit && (
+                      <>
+                        <span className="text-gray-300">|</span>
+                        <a href={`/customers/${c.id}/edit`} className="text-xs text-gray-600 hover:text-gray-700 font-medium">Edit</a>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatGHS, PAYMENT_METHOD_LABELS } from '@/lib/utils'
 import { useToast } from '@/components/ui/ToastProvider'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, RotateCcw, ShieldMinus } from 'lucide-react'
+import { BOOKING_DEPOSIT_THRESHOLD_PCT } from '@/lib/utils'
 
 interface Props {
   orderId: string
@@ -16,14 +17,17 @@ interface Props {
   orderNumber: string
   orderTotal: number
   orderStatus: string
+  securityDeposit?: number
+  securityDepositRefunded?: boolean
 }
 
 const MOBILE_MONEY_METHODS = ['mtn_mobile_money', 'vodafone_cash', 'airteltigo_money']
 
-export default function RecordPaymentForm({ orderId, invoiceId, customerId, balanceDue, invoiceTotal, orderNumber, orderTotal, orderStatus }: Props) {
+export default function RecordPaymentForm({ orderId, invoiceId, customerId, balanceDue, invoiceTotal, orderNumber, orderTotal, orderStatus, securityDeposit = 0, securityDepositRefunded = false }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
+  const [refunding, setRefunding] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     amount: '',
@@ -33,9 +37,13 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
     notes: '',
   })
   const [canOverride, setCanOverride] = useState(false)
+  const [staffName, setStaffName] = useState('Unknown staff')
 
   useEffect(() => {
-    fetch('/api/me').then(r => r.json()).then(d => setCanOverride(!!d.canOverridePayment)).catch(() => {})
+    fetch('/api/me').then(r => r.json()).then(d => {
+      setCanOverride(!!d.canOverrideBookingRelease)
+      setStaffName(d.fullName ?? 'Unknown staff')
+    }).catch(() => {})
   }, [])
 
   const isMoMo = MOBILE_MONEY_METHODS.includes(form.method)
@@ -119,6 +127,86 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
       toastError(msg)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function syncInvoiceAfterRefund() {
+    if (!invoiceId) return
+    const { data: allPayments } = await supabase.from('payments').select('amount').eq('invoice_id', invoiceId)
+    const totalPaid = (allPayments ?? []).reduce((s, p) => s + (p.amount ?? 0), 0)
+    const remaining = Math.max(0, invoiceTotal - totalPaid)
+    const newStatus = remaining <= 0.01 ? 'paid' : totalPaid > 0.01 ? 'partial' : 'unpaid'
+    await supabase.from('invoices').update({
+      amount_paid: totalPaid,
+      balance_due: remaining,
+      status: newStatus as any,
+    }).eq('id', invoiceId)
+  }
+
+  async function refundSecurityDeposit() {
+    if (securityDeposit <= 0) { toastError('No security deposit on file for this order'); return }
+    if (securityDepositRefunded) { toastError('Security deposit already marked as refunded'); return }
+    if (!confirm(`Refund the security deposit of ${formatGHS(securityDeposit)} for ${orderNumber}?`)) return
+    setRefunding(true)
+    try {
+      const payload: any = {
+        order_id: orderId,
+        customer_id: customerId,
+        amount: -securityDeposit,
+        payment_type: 'refund',
+        method: 'cash',
+        is_refund: true,
+        refund_reason: 'Security deposit refund',
+        notes: `Security deposit refund — authorized by ${staffName}`,
+      }
+      if (invoiceId) payload.invoice_id = invoiceId
+      const { error: insertError } = await supabase.from('payments').insert(payload)
+      if (insertError) throw insertError
+
+      if (invoiceId) {
+        await syncInvoiceAfterRefund()
+        await supabase.from('invoices').update({ security_deposit_refunded: true }).eq('id', invoiceId)
+      }
+      success('Security deposit refunded')
+      router.refresh()
+      if (invoiceId) router.push(`/invoices/${invoiceId}`)
+    } catch (err: any) {
+      toastError(err.message ?? 'Failed to refund security deposit')
+    } finally {
+      setRefunding(false)
+    }
+  }
+
+  async function generalRefund() {
+    const amountStr = prompt(`Refund amount (₵)? Max ${formatGHS(invoiceTotal)}`)
+    if (!amountStr) return
+    const amount = parseFloat(amountStr)
+    if (!amount || amount <= 0) { toastError('Enter a valid refund amount'); return }
+    const reason = prompt('Reason for this refund?') ?? ''
+    setRefunding(true)
+    try {
+      const payload: any = {
+        order_id: orderId,
+        customer_id: customerId,
+        amount: -amount,
+        payment_type: 'refund',
+        method: 'cash',
+        is_refund: true,
+        refund_reason: reason || 'Refund',
+        notes: `Refund — authorized by ${staffName}${reason ? `: ${reason}` : ''}`,
+      }
+      if (invoiceId) payload.invoice_id = invoiceId
+      const { error: insertError } = await supabase.from('payments').insert(payload)
+      if (insertError) throw insertError
+
+      if (invoiceId) await syncInvoiceAfterRefund()
+      success(`Refund of ${formatGHS(amount)} recorded`)
+      router.refresh()
+      if (invoiceId) router.push(`/invoices/${invoiceId}`)
+    } catch (err: any) {
+      toastError(err.message ?? 'Failed to record refund')
+    } finally {
+      setRefunding(false)
     }
   }
 
@@ -208,6 +296,24 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
           className="px-5 py-2.5 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">
           Cancel
         </button>
+      </div>
+
+      {/* Refund actions — auditable, logged as separate payment-history transactions */}
+      <div className="pt-4 border-t border-gray-100 space-y-2">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Refunds</p>
+        <div className="flex gap-3">
+          {securityDeposit > 0 && (
+            <button type="button" onClick={refundSecurityDeposit} disabled={refunding || securityDepositRefunded}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 disabled:opacity-50 transition-colors">
+              <ShieldMinus size={14} />
+              {securityDepositRefunded ? 'Deposit Already Refunded' : `Refund Security Deposit (${formatGHS(securityDeposit)})`}
+            </button>
+          )}
+          <button type="button" onClick={generalRefund} disabled={refunding}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors">
+            <RotateCcw size={14} /> Refund
+          </button>
+        </div>
       </div>
     </form>
   )

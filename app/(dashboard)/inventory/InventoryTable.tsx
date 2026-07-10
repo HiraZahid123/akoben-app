@@ -9,6 +9,7 @@ import { Package } from 'lucide-react'
 interface Props {
   items: InventoryAvailability[]
   categories: InventoryCategory[]
+  canEdit?: boolean
 }
 
 function stockBadge(available: number, total: number) {
@@ -29,7 +30,7 @@ function conditionBadge(condition: string) {
   return <Badge variant={c.variant}>{c.label}</Badge>
 }
 
-export default function InventoryTable({ items, categories }: Props) {
+export default function InventoryTable({ items, categories, canEdit = true }: Props) {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
 
@@ -123,13 +124,17 @@ export default function InventoryTable({ items, categories }: Props) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <a
-                        href={`/inventory/${item.id}/edit`}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        Edit
-                      </a>
-                      <span className="text-gray-300">|</span>
+                      {canEdit && (
+                        <>
+                          <a
+                            href={`/inventory/${item.id}/edit`}
+                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            Edit
+                          </a>
+                          <span className="text-gray-300">|</span>
+                        </>
+                      )}
                       <a
                         href={`/inventory/${item.id}`}
                         className="text-xs text-gray-600 hover:text-gray-700 font-medium"

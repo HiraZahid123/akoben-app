@@ -1,11 +1,15 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import CustomerForm from '@/components/customers/CustomerForm'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { getCurrentUserRole } from '@/lib/auth-role'
+import { getModuleAccess } from '@/lib/permissions'
 
 export default async function EditCustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
+  const role = await getCurrentUserRole()
+  if (getModuleAccess(role, 'customers') !== 'full') redirect(`/customers/${id}`)
 
   const { data: customerData } = await supabase
     .from('customers')

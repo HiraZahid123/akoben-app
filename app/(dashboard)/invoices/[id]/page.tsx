@@ -26,7 +26,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const [r1, r2, r3] = await Promise.all([
     supabase.from('invoices')
-      .select('*, customers(id, full_name, company_name, email, phone), orders(id, order_number, event_name, is_booked, order_items(*, inventory_items(name)))')
+      .select('*, customers(id, full_name, company_name, email, phone), orders(id, order_number, event_name, is_booked, booked_via_override, order_items(*, inventory_items(name)))')
       .eq('id', id).single(),
     supabase.from('payments').select('*').eq('invoice_id', id).order('created_at'),
     supabase.from('business_settings').select('momo_payment_number').limit(1).maybeSingle(),
@@ -95,7 +95,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <div className="px-5 py-4 border-t border-gray-100 space-y-2">
               <div className="flex justify-between text-sm text-gray-600"><span>Subtotal</span><span>{formatGHS(invoice.subtotal)}</span></div>
               {invoice.delivery_fee > 0 && <div className="flex justify-between text-sm text-gray-600"><span>Delivery</span><span>{formatGHS(invoice.delivery_fee)}</span></div>}
+              {invoice.setup_fee > 0 && <div className="flex justify-between text-sm text-gray-600"><span>Drop Off / Breakdown Fee</span><span>{formatGHS(invoice.setup_fee)}</span></div>}
               {invoice.tax_amount > 0 && <div className="flex justify-between text-sm text-gray-600"><span>VAT (15%)</span><span>{formatGHS(invoice.tax_amount)}</span></div>}
+              {invoice.security_deposit > 0 && (
+                <div className="flex justify-between text-sm text-amber-600">
+                  <span>Security Deposit {invoice.security_deposit_refunded && <span className="text-green-600">(Refunded)</span>}</span>
+                  <span>{formatGHS(invoice.security_deposit)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-200">
                 <span>Total</span><span>{formatGHS(invoice.total)}</span>
               </div>
@@ -181,11 +188,13 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           <InvoiceBookingActions
             invoiceId={invoice.id}
             orderId={invoice.order_id}
+            orderNumber={order?.order_number ?? ''}
             invoiceNumber={invoice.invoice_number}
             customerName={customer?.full_name}
             total={invoice.total}
             amountPaid={invoice.amount_paid}
             isBooked={order?.is_booked ?? false}
+            bookedViaOverride={order?.booked_via_override ?? false}
             currentStatus={invoice.status}
           />
 

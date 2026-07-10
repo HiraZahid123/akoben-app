@@ -71,7 +71,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, ModulePermissions> = {
     settings: 'none', overridePrivilege: false,
   },
   bookkeeper: {
-    dashboard: 'full', customers: 'full', inventory: 'view', scanner: 'view',
+    dashboard: 'full', customers: 'view', inventory: 'view', scanner: 'view',
     quotes: 'none', orders: 'none', invoices: 'full', calendar: 'none',
     reports: 'full', crm: 'none', backoffice: 'none', delivery: 'none',
     settings: 'none', overridePrivilege: false,

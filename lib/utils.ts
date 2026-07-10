@@ -24,6 +24,11 @@ export function formatGhanaPhone(phone: string | null | undefined): string {
 // Ghana VAT calculation (15%)
 export const GHANA_VAT_RATE = 0
 
+// Single source of truth for the booking-confirmation deposit threshold.
+// Policy (confirmed by client 2026-07): 50% of the invoice total must be paid
+// before an event can be booked. Do not hardcode this percentage elsewhere.
+export const BOOKING_DEPOSIT_THRESHOLD_PCT = 50
+
 export function calculateVAT(subtotal: number, vatRate = GHANA_VAT_RATE): number {
   return Math.round((subtotal * vatRate / 100) * 100) / 100
 }

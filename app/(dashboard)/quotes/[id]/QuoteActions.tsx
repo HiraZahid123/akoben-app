@@ -99,8 +99,12 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
       pickup_date:      quote.pickup_date ?? new Date().toISOString(),
       return_date:      quote.return_date ?? new Date().toISOString(),
       delivery_method:  quote.delivery_method,
+      venue_name:       quote.venue_name,
+      venue_region:     quote.venue_region,
       venue_address:    quote.venue_address,
       delivery_fee:     quote.delivery_fee,
+      setup_fee:        quote.setup_fee,
+      security_deposit: quote.security_deposit,
       discount_pct:     quote.discount_pct,
       tax_rate:         quote.tax_rate,
       status:           'confirmed',
@@ -121,9 +125,11 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
       const subtotal = qItems.reduce((s, qi) => s + (qi.line_total ?? 0), 0)
       const discountAmount = Math.round(subtotal * (quote.discount_pct ?? 0) / 100 * 100) / 100
       const deliveryFee = quote.delivery_fee ?? 0
-      const taxable = subtotal - discountAmount + deliveryFee
+      const setupFee = quote.setup_fee ?? 0
+      const securityDeposit = quote.security_deposit ?? 0
+      const taxable = subtotal - discountAmount + deliveryFee + setupFee
       const taxAmount = Math.round(taxable * (quote.tax_rate ?? 0) / 100 * 100) / 100
-      const totalAmount = taxable + taxAmount
+      const totalAmount = taxable + taxAmount + securityDeposit
       const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
 
       const { data: invoice } = await supabase.from('invoices').insert({
@@ -132,6 +138,8 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
         due_date: dueDate,
         subtotal,
         delivery_fee: deliveryFee,
+        setup_fee: setupFee,
+        security_deposit: securityDeposit,
         tax_amount: taxAmount,
         total: totalAmount,
         amount_paid: 0,

@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+import { BOOKING_DEPOSIT_THRESHOLD_PCT } from '@/lib/utils'
 
 const styles = StyleSheet.create({
   page: { fontFamily: 'Helvetica', fontSize: 10, padding: 48, color: '#1f2937', lineHeight: 1.5 },
@@ -44,7 +45,7 @@ function ghsFormat(n: number) {
   return `GHS ${(n ?? 0).toFixed(2)}`
 }
 
-const DEFAULT_TERMS = `1. BOOKING & DEPOSIT: A deposit of 30% of the total rental amount is required to confirm your booking. The booking is not confirmed until the deposit is received.
+const DEFAULT_TERMS = `1. BOOKING & DEPOSIT: ${BOOKING_DEPOSIT_THRESHOLD_PCT}% payment must be made before booking is confirmed. The booking is not confirmed until this payment is received.
 
 2. PAYMENT: The remaining balance is due on or before the delivery/pickup date. Accepted payment methods: Cash, Mobile Money (MTN MoMo, Vodafone Cash, AirtelTigo Money), Bank Transfer.
 
@@ -66,8 +67,9 @@ export default function ContractPDF({ order, orderItems, customer, business }: P
   const discount = subtotal * (order.discount_pct ?? 0) / 100
   const taxable = subtotal - discount + (order.delivery_fee ?? 0) + (order.setup_fee ?? 0)
   const tax = taxable * 0.15
-  const total = taxable + tax
-  const deposit = total * 0.3
+  const securityDeposit = order.security_deposit ?? 0
+  const total = taxable + tax + securityDeposit
+  const deposit = total * BOOKING_DEPOSIT_THRESHOLD_PCT / 100
 
   return (
     <Document>
@@ -177,10 +179,22 @@ export default function ContractPDF({ order, orderItems, customer, business }: P
               <Text>{ghsFormat(order.delivery_fee)}</Text>
             </View>
           )}
+          {(order.setup_fee ?? 0) > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={{ color: '#6b7280' }}>Drop Off / Breakdown Fee</Text>
+              <Text>{ghsFormat(order.setup_fee)}</Text>
+            </View>
+          )}
           <View style={styles.totalRow}>
             <Text style={{ color: '#6b7280' }}>VAT (15%)</Text>
             <Text>{ghsFormat(tax)}</Text>
           </View>
+          {securityDeposit > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={{ color: '#6b7280' }}>Security Deposit</Text>
+              <Text>{ghsFormat(securityDeposit)}</Text>
+            </View>
+          )}
           <View style={styles.grandTotal}>
             <Text style={styles.bold}>Total</Text>
             <Text style={styles.bold}>{ghsFormat(total)}</Text>
@@ -188,7 +202,7 @@ export default function ContractPDF({ order, orderItems, customer, business }: P
         </View>
 
         <View style={styles.depositBox}>
-          <Text style={[styles.bold, { fontSize: 10 }]}>Deposit Required (30%): {ghsFormat(deposit)}</Text>
+          <Text style={[styles.bold, { fontSize: 10 }]}>{BOOKING_DEPOSIT_THRESHOLD_PCT}% payment must be made before booking is confirmed: {ghsFormat(deposit)}</Text>
           <Text style={{ fontSize: 9, color: '#1d4ed8', marginTop: 3 }}>
             Booking is confirmed upon receipt of deposit payment.
           </Text>

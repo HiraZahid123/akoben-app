@@ -101,7 +101,9 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
                 <div className="flex justify-between text-green-600"><span>Discount ({quote.discount_pct}%)</span><span>−{formatGHS(quote.subtotal * quote.discount_pct / 100)}</span></div>
               )}
               {quote.delivery_fee > 0 && <div className="flex justify-between text-gray-600"><span>Delivery</span><span>{formatGHS(quote.delivery_fee)}</span></div>}
+              {(quote as any).setup_fee > 0 && <div className="flex justify-between text-gray-600"><span>Drop Off / Breakdown Fee</span><span>{formatGHS((quote as any).setup_fee)}</span></div>}
               {quote.tax_amount > 0 && <div className="flex justify-between text-gray-600"><span>VAT ({quote.tax_rate}%)</span><span>{formatGHS(quote.tax_amount)}</span></div>}
+              {(quote as any).security_deposit > 0 && <div className="flex justify-between text-gray-600"><span>Security Deposit</span><span>{formatGHS((quote as any).security_deposit)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(quote.total)}</span>
               </div>
@@ -118,7 +120,8 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               {quote.venue_name && <div><span className="text-gray-500">Venue:</span> <span className="text-gray-800 ml-1">{quote.venue_name}</span></div>}
               {quote.venue_region && <div><span className="text-gray-500">Region:</span> <span className="text-gray-800 ml-1">{quote.venue_region}</span></div>}
               {quote.venue_address && <div><span className="text-gray-500">Address:</span> <span className="text-gray-800 ml-1">{quote.venue_address}</span></div>}
-              {(quote as any).setup_fee > 0 && <div><span className="text-gray-500">Setup Fee:</span> <span className="text-gray-800 ml-1">{formatGHS((quote as any).setup_fee)}</span></div>}
+              {(quote as any).setup_fee > 0 && <div><span className="text-gray-500">Drop Off / Breakdown Fee:</span> <span className="text-gray-800 ml-1">{formatGHS((quote as any).setup_fee)}</span></div>}
+              {(quote as any).security_deposit > 0 && <div><span className="text-gray-500">Security Deposit:</span> <span className="text-gray-800 ml-1">{formatGHS((quote as any).security_deposit)}</span></div>}
             </div>
           </div>
 

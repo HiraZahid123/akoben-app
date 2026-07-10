@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { formatGHS, GHANA_REGIONS, GHANA_VAT_RATE } from '@/lib/utils'
+import { formatGHS, GHANA_REGIONS, GHANA_VAT_RATE, BOOKING_DEPOSIT_THRESHOLD_PCT } from '@/lib/utils'
 import { useToast } from '@/components/ui/ToastProvider'
 import { Phone, Calendar } from 'lucide-react'
 
@@ -37,6 +37,7 @@ interface InitialOrderData {
   venue_region: string | null
   delivery_fee: number
   setup_fee: number
+  security_deposit: number
   discount_pct: number
   internal_notes: string | null
   customer_notes: string | null
@@ -63,6 +64,7 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
   const [venueRegion, setVenueRegion] = useState(initialData?.venue_region ?? '')
   const [deliveryFee, setDeliveryFee] = useState(String(initialData?.delivery_fee ?? '0'))
   const [setupFee, setSetupFee] = useState(String(initialData?.setup_fee ?? '0'))
+  const [securityDeposit, setSecurityDeposit] = useState(String(initialData?.security_deposit ?? '0'))
   const [discountPct, setDiscountPct] = useState(String(initialData?.discount_pct ?? '0'))
   const [internalNotes, setInternalNotes] = useState(initialData?.internal_notes ?? '')
   const [customerNotes, setCustomerNotes] = useState(initialData?.customer_notes ?? '')
@@ -95,8 +97,9 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
   const sFee = parseFloat(setupFee || '0')
   const taxable = subtotal - discountAmount + dFee + sFee
   const taxAmount = Math.round(taxable * GHANA_VAT_RATE / 100 * 100) / 100
-  const total = taxable + taxAmount
-  const depositRequired = Math.round(total * 0.3 * 100) / 100
+  const secDeposit = parseFloat(securityDeposit || '0')
+  const total = taxable + taxAmount + secDeposit
+  const depositRequired = Math.round(total * BOOKING_DEPOSIT_THRESHOLD_PCT / 100 * 100) / 100
 
   function addItem(item: ItemOption) {
     if (lineItems.find(li => li.item_id === item.id)) return
@@ -146,6 +149,7 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
       venue_region:    (venueRegion as any) || null,
       delivery_fee:    dFee,
       setup_fee:       sFee,
+      security_deposit: secDeposit,
       subtotal:        subtotal,
       discount_pct:    parseFloat(discountPct) || 0,
       discount_amount: discountAmount,
@@ -188,6 +192,8 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
         await supabase.from('invoices').update({
           subtotal,
           delivery_fee: dFee,
+          setup_fee: sFee,
+          security_deposit: secDeposit,
           tax_amount: taxAmount,
           total,
           balance_due: Math.max(0, total - amtPaid),
@@ -302,8 +308,13 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Setup Fee (₵)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Drop Off / Breakdown Fee (₵)</label>
                   <input type="number" min="0" step="0.01" value={setupFee} onChange={e => setSetupFee(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Security Deposit (₵)</label>
+                  <input type="number" min="0" step="0.01" value={securityDeposit} onChange={e => setSecurityDeposit(e.target.value)}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </>}
@@ -433,7 +444,7 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
               )}
               {sFee > 0 && (
                 <div className="flex justify-between text-gray-600">
-                  <span>Setup Fee</span>
+                  <span>Drop Off / Breakdown Fee</span>
                   <span>{formatGHS(sFee)}</span>
                 </div>
               )}
@@ -443,12 +454,18 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
                   <span>{formatGHS(taxAmount)}</span>
                 </div>
               )}
+              {secDeposit > 0 && (
+                <div className="flex justify-between text-amber-600">
+                  <span>Security Deposit</span>
+                  <span>{formatGHS(secDeposit)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-100">
                 <span>Total</span>
                 <span>{formatGHS(total)}</span>
               </div>
               <div className="flex justify-between text-blue-600 text-xs pt-1">
-                <span>Deposit required (30%)</span>
+                <span>Deposit required ({BOOKING_DEPOSIT_THRESHOLD_PCT}%)</span>
                 <span>{formatGHS(depositRequired)}</span>
               </div>
             </div>

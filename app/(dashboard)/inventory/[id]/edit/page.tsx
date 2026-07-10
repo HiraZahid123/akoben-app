@@ -1,10 +1,15 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import InventoryForm from '@/components/inventory/InventoryForm'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { getCurrentUserRole } from '@/lib/auth-role'
+import { getModuleAccess } from '@/lib/permissions'
 
 export default async function EditInventoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const role = await getCurrentUserRole()
+  if (getModuleAccess(role, 'inventory') !== 'full') redirect(`/inventory/${id}`)
+
   const supabase = await createServerSupabaseClient()
 
   const [r1, r2] = await Promise.all([

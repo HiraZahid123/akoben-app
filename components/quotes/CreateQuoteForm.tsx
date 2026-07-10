@@ -27,6 +27,7 @@ interface InitialQuoteData {
   venue_address: string | null
   delivery_fee: number
   setup_fee: number
+  security_deposit: number
   discount_pct: number
   notes: string | null
   quote_items: { item_id: string; quantity: number; unit_rate: number; rental_days: number; inventory_items: { name: string } | null }[]
@@ -53,8 +54,10 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
   const [deliveryFee, setDeliveryFee] = useState(String(initialData?.delivery_fee ?? '0'))
   const [setupFee, setSetupFee] = useState(String(initialData?.setup_fee ?? '0'))
   const [discountPct, setDiscountPct] = useState(String(initialData?.discount_pct ?? '0'))
-  const [securityDepositType, setSecurityDepositType] = useState<'pct' | 'fixed'>('pct')
-  const [securityDepositValue, setSecurityDepositValue] = useState('')
+  const [securityDepositType, setSecurityDepositType] = useState<'pct' | 'fixed'>('fixed')
+  const [securityDepositValue, setSecurityDepositValue] = useState(
+    initialData?.security_deposit ? String(initialData.security_deposit) : ''
+  )
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [lineItems, setLineItems] = useState<LineItem[]>(
     initialData?.quote_items?.map(qi => ({
@@ -75,7 +78,8 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
   const subtotal = lineItems.reduce((s, li) => s + li.unit_rate * li.quantity * li.rental_days, 0)
   const discountAmount = Math.round(subtotal * parseFloat(discountPct || '0') / 100 * 100) / 100
   const dFee = parseFloat(deliveryFee || '0')
-  const taxable = subtotal - discountAmount + dFee
+  const sFee = parseFloat(setupFee || '0')
+  const taxable = subtotal - discountAmount + dFee + sFee
   const taxAmount = Math.round(taxable * GHANA_VAT_RATE / 100 * 100) / 100
   const totalBeforeDeposit = taxable + taxAmount
   const securityDeposit = securityDepositValue
@@ -83,7 +87,7 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
       ? Math.round(totalBeforeDeposit * parseFloat(securityDepositValue) / 100 * 100) / 100
       : parseFloat(securityDepositValue)
     : 0
-  const total = totalBeforeDeposit
+  const total = totalBeforeDeposit + securityDeposit
 
   const filteredItems = inventoryItems.filter(i =>
     i.quantity_available > 0 &&
@@ -119,7 +123,8 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
       venue_region:    venueRegion as any || null,
       venue_address:   venueAddress || null,
       delivery_fee:    dFee,
-      setup_fee:       parseFloat(setupFee) || 0,
+      setup_fee:       sFee,
+      security_deposit: securityDeposit,
       discount_pct:    parseFloat(discountPct) || 0,
       subtotal:        subtotal,
       tax_rate:        GHANA_VAT_RATE,
@@ -238,7 +243,7 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Setup Fee (₵)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Drop Off / Breakdown Fee (₵)</label>
                 <input type="number" min="0" step="0.01" value={setupFee} onChange={e => setSetupFee(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
@@ -319,6 +324,7 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
                 <div className="flex justify-between text-green-600"><span>Discount ({discountPct}%)</span><span>−{formatGHS(discountAmount)}</span></div>
               )}
               {dFee > 0 && <div className="flex justify-between text-gray-600"><span>Delivery</span><span>{formatGHS(dFee)}</span></div>}
+              {sFee > 0 && <div className="flex justify-between text-gray-600"><span>Drop Off / Breakdown Fee</span><span>{formatGHS(sFee)}</span></div>}
               {taxAmount > 0 && <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(taxAmount)}</span></div>}
               {securityDeposit > 0 && <div className="flex justify-between text-amber-600"><span>Security Deposit</span><span>{formatGHS(securityDeposit)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">

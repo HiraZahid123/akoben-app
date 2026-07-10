@@ -5,6 +5,8 @@ import UnitsTable from './UnitsTable'
 import BundleManager from './BundleManager'
 import { formatGHS } from '@/lib/utils'
 import { notFound } from 'next/navigation'
+import { getCurrentUserRole } from '@/lib/auth-role'
+import { getModuleAccess } from '@/lib/permissions'
 
 const CONDITION_VARIANTS: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
   excellent: 'success', good: 'info', fair: 'warning',
@@ -14,6 +16,8 @@ const CONDITION_VARIANTS: Record<string, 'success' | 'info' | 'warning' | 'dange
 export default async function InventoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
+  const role = await getCurrentUserRole()
+  const canEdit = getModuleAccess(role, 'inventory') === 'full'
 
   const [r1, r2] = await Promise.all([
     supabase.from('inventory_items').select('*, inventory_categories(name)').eq('id', id).single(),
@@ -36,14 +40,18 @@ export default async function InventoryDetailPage({ params }: { params: Promise<
         subtitle={(item.inventory_categories as any)?.name ?? 'Uncategorised'}
         action={
           <div className="flex gap-2">
-            <a href={`/inventory/${id}/edit`}
-              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-              Edit Item
-            </a>
-            <a href="/inventory/new"
-              className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-              + Add Item
-            </a>
+            {canEdit && (
+              <>
+                <a href={`/inventory/${id}/edit`}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                  Edit Item
+                </a>
+                <a href="/inventory/new"
+                  className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                  + Add Item
+                </a>
+              </>
+            )}
           </div>
         }
       />
