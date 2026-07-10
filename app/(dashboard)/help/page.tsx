@@ -228,7 +228,7 @@ export default function HelpPage() {
           </div>
 
           {sections.map(section => (
-            <HelpAccordion key={section.id} id={section.id} title={section.title} icon={section.icon} content={section.content} steps={section.steps} />
+            <HelpAccordion key={section.id} id={section.id} title={section.title} content={section.content} steps={section.steps} />
           ))}
 
           <div className="text-center text-xs text-gray-400 pt-4 pb-8">

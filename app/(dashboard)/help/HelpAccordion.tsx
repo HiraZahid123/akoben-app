@@ -1,19 +1,40 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, type LucideIcon } from 'lucide-react'
+import {
+  ChevronDown, ClipboardList, MessageSquare, Package, Receipt, Calendar, Truck,
+  PackageCheck, Container, Tag, Archive, BarChart3, CreditCard, Bookmark, Lightbulb,
+  type LucideIcon,
+} from 'lucide-react'
+
+const ICONS: Record<string, LucideIcon> = {
+  overview: ClipboardList,
+  quotes: MessageSquare,
+  orders: Package,
+  invoices: Receipt,
+  calendar: Calendar,
+  pull: Truck,
+  return: PackageCheck,
+  delivery: Container,
+  inventory: Tag,
+  backoffice: Archive,
+  reports: BarChart3,
+  payments: CreditCard,
+  statuses: Bookmark,
+  tips: Lightbulb,
+}
 
 interface Step { title: string; body: string }
 interface Props {
   id: string
   title: string
-  icon?: LucideIcon
   content?: string
   steps?: Step[]
 }
 
-export default function HelpAccordion({ id, title, icon: Icon, content, steps }: Props) {
+export default function HelpAccordion({ id, title, content, steps }: Props) {
   const [open, setOpen] = useState(false)
+  const Icon = ICONS[id]
 
   return (
     <div id={id} className="bg-white rounded-xl border border-gray-200 overflow-hidden scroll-mt-4">

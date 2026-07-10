@@ -1,18 +1,30 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import PageHeader from '@/components/layout/PageHeader'
 import Badge from '@/components/ui/Badge'
+import PaginationLinks from '@/components/ui/PaginationLinks'
 import { formatDate } from '@/lib/utils'
 import EmailContractButton from './EmailContractButton'
 import { Download } from 'lucide-react'
-export default async function ContractsPage() {
+
+const PAGE_SIZE = 50
+
+export default async function ContractsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const sp = await searchParams
+  const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1)
+  const from = (page - 1) * PAGE_SIZE
+  const to = from + PAGE_SIZE - 1
+
   const supabase = await createServerSupabaseClient()
 
-  const { data: orders } = await supabase
+  const { data: orders, count } = await supabase
     .from('orders_with_customer')
-    .select('id, order_number, customer_name, customer_email, customer_phone, event_name, event_date, status, created_at')
+    .select('id, order_number, customer_name, customer_email, customer_phone, event_name, event_date, status, created_at', { count: 'exact' })
     .not('status', 'in', '(draft,cancelled)')
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(from, to)
+
+  const total = count ?? 0
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const STATUS_VARIANTS: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
     quote: 'info', confirmed: 'success', active: 'success',
@@ -84,6 +96,7 @@ export default async function ContractsPage() {
               </tbody>
             </table>
           )}
+          <PaginationLinks page={page} pageCount={pageCount} total={total} pageSize={PAGE_SIZE} basePath="/contracts" />
         </div>
 
         <div className="mt-4 text-xs text-gray-400 max-w-5xl">
