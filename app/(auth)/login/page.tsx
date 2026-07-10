@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -37,55 +38,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f1e7] text-[#161311] flex flex-col">
-      <header className="border-b border-[#161311]/15">
-        <div className="max-w-6xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-          <a href="/" className="font-display text-lg tracking-tight">Akoben</a>
-          <span className="text-xs uppercase tracking-[0.18em] text-[#161311]/50">Staff Portal</span>
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+      <header className="bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <a href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm text-white">A</div>
+            <div>
+              <div className="font-semibold text-sm leading-tight text-gray-900">Akoben Rentals</div>
+              <div className="text-[10px] text-gray-400 leading-tight">Cape Coast, Ghana</div>
+            </div>
+          </a>
+          <span className="text-xs text-gray-400 font-medium">Staff Portal</span>
         </div>
       </header>
 
       <div className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8a5a34] font-medium mb-3">
+        <div className="w-full max-w-sm bg-white rounded-xl border border-gray-200 p-8">
+          <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mb-2">
             Cape Coast, Ghana
           </p>
-          <h1 className="font-display text-4xl mb-8">Sign in</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Sign in</h1>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             {error && (
-              <div className="text-sm px-4 py-3 border border-red-800/30 bg-red-800/5 text-red-800">
+              <div className="text-sm px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700">
                 {error}
               </div>
             )}
             <div>
-              <label className="block text-xs uppercase tracking-[0.14em] text-[#161311]/60 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full bg-transparent border-b border-[#161311]/30 px-1 py-2 text-sm focus:outline-none focus:border-[#161311] transition-colors"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-[0.14em] text-[#161311]/60 mb-1.5">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-transparent border-b border-[#161311]/30 px-1 py-2 text-sm focus:outline-none focus:border-[#161311] transition-colors"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full border border-[#161311] py-2.5 text-xs uppercase tracking-[0.18em] font-medium hover:bg-[#161311] hover:text-[#f6f1e7] disabled:opacity-50 transition-colors mt-2"
+              className="w-full inline-flex items-center justify-center gap-1.5 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2"
             >
-              {loading ? 'Signing in…' : 'Sign In →'}
+              {loading ? 'Signing in…' : <>Sign In <ArrowRight size={15} /></>}
             </button>
           </form>
         </div>

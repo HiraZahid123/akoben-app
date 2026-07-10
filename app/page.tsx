@@ -1,13 +1,17 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import {
+  MessageSquare, ClipboardList, Receipt, CalendarCheck, Truck, PackageCheck,
+  Package, Percent, Layers, ArrowRight, type LucideIcon,
+} from 'lucide-react'
 
-const WORKFLOW = [
-  { n: '01', title: 'Quote', body: 'Draft a rental quote for the client and send it for approval.' },
-  { n: '02', title: 'Order', body: 'Accepted quotes convert straight into a confirmed order.' },
-  { n: '03', title: 'Invoice', body: 'An invoice is generated automatically, deposits and balances tracked.' },
-  { n: '04', title: 'Book', body: 'Once 50% is paid, the event locks onto the calendar.' },
-  { n: '05', title: 'Pull', body: 'Crew scans items out on pickup day — inventory updates live.' },
-  { n: '06', title: 'Return', body: 'Items are checked back in and the order closes out.' },
+const WORKFLOW: { n: string; title: string; body: string; icon: LucideIcon }[] = [
+  { n: '01', title: 'Quote', body: 'Draft a rental quote for the client and send it for approval.', icon: MessageSquare },
+  { n: '02', title: 'Order', body: 'Accepted quotes convert straight into a confirmed order.', icon: ClipboardList },
+  { n: '03', title: 'Invoice', body: 'An invoice is generated automatically, deposits and balances tracked.', icon: Receipt },
+  { n: '04', title: 'Book', body: 'Once 50% is paid, the event locks onto the calendar.', icon: CalendarCheck },
+  { n: '05', title: 'Pull', body: 'Crew scans items out on pickup day — inventory updates live.', icon: Truck },
+  { n: '06', title: 'Return', body: 'Items are checked back in and the order closes out.', icon: PackageCheck },
 ]
 
 export default async function HomePage() {
@@ -19,89 +23,113 @@ export default async function HomePage() {
     .from('inventory_items')
     .select('id', { count: 'exact', head: true })
 
+  const stats: { value: string | number; label: string; icon: LucideIcon }[] = [
+    { value: itemCount ?? 0, label: 'Inventory Items Tracked', icon: Package },
+    { value: '50%', label: 'Deposit To Lock A Booking', icon: Percent },
+    { value: '1', label: 'System, Start To Return', icon: Layers },
+  ]
+
   return (
-    <div className="min-h-screen bg-[#f6f1e7] text-[#161311]">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Top bar */}
-      <header className="border-b border-[#161311]/15">
-        <div className="max-w-6xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-          <span className="font-display text-lg tracking-tight">Akoben</span>
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm text-white">A</div>
+            <div>
+              <div className="font-semibold text-sm leading-tight text-gray-900">Akoben Rentals</div>
+              <div className="text-[10px] text-gray-400 leading-tight">Cape Coast, Ghana</div>
+            </div>
+          </div>
           <a
             href="/login"
-            className="text-xs uppercase tracking-[0.18em] font-medium border border-[#161311] px-4 py-2 hover:bg-[#161311] hover:text-[#f6f1e7] transition-colors"
+            className="inline-flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
-            Staff Login →
+            Staff Login <ArrowRight size={14} />
           </a>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 md:px-10 pt-16 md:pt-24 pb-14">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#8a5a34] font-medium mb-6">
+      <section className="max-w-6xl mx-auto px-6 pt-16 pb-14">
+        <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mb-4">
           Event Rental Operations — Cape Coast, Ghana
         </p>
-        <h1 className="font-display text-[13vw] leading-[0.95] md:text-[6.5rem] md:leading-[0.92] tracking-tight max-w-4xl">
-          Rentals, run
-          <br />
-          <span className="italic text-[#8a5a34]">properly.</span>
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight max-w-2xl text-gray-900">
+          Rentals, run properly.
         </h1>
-        <p className="mt-8 max-w-md text-[#161311]/70 text-base leading-relaxed">
+        <p className="mt-5 max-w-lg text-gray-500 text-base leading-relaxed">
           From first quote to final check-in — Akoben Event Rentals runs the
           whole job: inventory, invoicing, delivery, and the paperwork nobody
           wants to chase down twice.
         </p>
+        <a
+          href="/login"
+          className="mt-7 inline-flex items-center gap-1.5 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          Go to Staff Login <ArrowRight size={15} />
+        </a>
       </section>
 
-      {/* Stat strip */}
-      <section className="border-y border-[#161311]/15">
-        <div className="max-w-6xl mx-auto grid grid-cols-3 divide-x divide-[#161311]/15">
-          {[
-            { value: itemCount ?? '—', label: 'Inventory Items Tracked' },
-            { value: '50%', label: 'Deposit To Lock A Booking' },
-            { value: '1', label: 'System, Start To Return' },
-          ].map(stat => (
-            <div key={stat.label} className="px-6 md:px-10 py-10">
-              <div className="font-display text-4xl md:text-5xl">{stat.value}</div>
-              <div className="mt-2 text-xs uppercase tracking-[0.14em] text-[#161311]/55">
-                {stat.label}
+      {/* Stat cards */}
+      <section className="max-w-6xl mx-auto px-6 pb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {stats.map(stat => {
+            const Icon = stat.icon
+            return (
+              <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
+                <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <Icon size={20} className="text-blue-600" strokeWidth={2} />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900 leading-none">{stat.value}</div>
+                  <div className="text-sm text-gray-500 mt-1.5">{stat.label}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
-      {/* Workflow index */}
-      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 md:py-20">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#8a5a34] font-medium mb-10">
-          How a booking moves
-        </p>
-        <div className="divide-y divide-[#161311]/15 border-t border-b border-[#161311]/15">
-          {WORKFLOW.map(step => (
-            <div
-              key={step.n}
-              className="grid grid-cols-[3.5rem_1fr] md:grid-cols-[6rem_10rem_1fr] items-baseline gap-4 md:gap-8 py-6"
-            >
-              <span className="font-display text-2xl text-[#8a5a34]">{step.n}</span>
-              <span className="font-display text-xl md:text-2xl">{step.title}</span>
-              <span className="text-sm text-[#161311]/65 leading-relaxed md:max-w-md">
-                {step.body}
-              </span>
-            </div>
-          ))}
+      {/* Workflow */}
+      <section className="max-w-6xl mx-auto px-6 pb-16">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">How a booking moves</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {WORKFLOW.map(step => {
+            const Icon = step.icon
+            return (
+              <div key={step.n} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                    <Icon size={18} className="text-gray-600" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400 font-medium">{step.n}</div>
+                    <div className="font-semibold text-gray-900">{step.title}</div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 leading-relaxed">{step.body}</p>
+              </div>
+            )
+          })}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#161311]/15">
-        <div className="max-w-6xl mx-auto px-6 md:px-10 py-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-          <div>
-            <p className="font-display text-xl">Akoben Event Rentals</p>
-            <p className="text-sm text-[#161311]/55 mt-1">Cape Coast, Central Region, Ghana</p>
+      <footer className="bg-white border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-blue-500 rounded-md flex items-center justify-center font-bold text-xs text-white">A</div>
+            <div>
+              <p className="font-semibold text-sm text-gray-900">Akoben Event Rentals</p>
+              <p className="text-xs text-gray-400">Cape Coast, Central Region, Ghana</p>
+            </div>
           </div>
           <a
             href="/login"
-            className="text-xs uppercase tracking-[0.18em] font-medium border border-[#161311] px-4 py-2 hover:bg-[#161311] hover:text-[#f6f1e7] transition-colors self-start md:self-auto"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
           >
-            Staff Login →
+            Staff Login <ArrowRight size={14} />
           </a>
         </div>
       </footer>
