@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const amountKobo = Math.round(amount * 100) // Paystack uses kobo (GHS pesewas)
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const appUrl = new URL(req.url).origin
 
   const res = await fetch('https://api.paystack.co/transaction/initialize', {
     method: 'POST',
