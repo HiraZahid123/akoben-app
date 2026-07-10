@@ -20,7 +20,7 @@ export default function Loading() {
   return (
     <div className="flex flex-col h-full">
       <SkeletonPageHeader />
-      <div className="flex-1 overflow-auto p-6 space-y-8 max-w-3xl">
+      <div className="flex-1 overflow-auto p-6 space-y-8">
         <SkeletonSection rows={6} />
         <SkeletonSection rows={2} />
         <SkeletonSection rows={2} />

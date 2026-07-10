@@ -23,7 +23,7 @@ export default async function SettingsPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Settings" subtitle="Business configuration" />
-      <div className="flex-1 overflow-auto p-6 space-y-8 max-w-3xl">
+      <div className="flex-1 overflow-auto p-6 space-y-8">
         {role === 'admin' && <SettingsForm settings={settings} />}
         <StaffManagement currentUserRole={role} />
         {role === 'admin' && <IntegrationsPanel paystackConfigured={paystackConfigured} />}
