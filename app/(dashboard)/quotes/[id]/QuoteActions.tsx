@@ -18,9 +18,15 @@ interface Props {
   total: number
   expiresAt: string
   convertedToOrder?: string | null
+  items?: { name: string; quantity: number; lineTotal: number }[]
+  deliveryFee?: number
+  setupFee?: number
+  securityDeposit?: number
+  additionalChargesDescription?: string | null
+  additionalChargesAmount?: number
 }
 
-export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerPhone, customerName, total, expiresAt, convertedToOrder }: Props) {
+export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerPhone, customerName, total, expiresAt, convertedToOrder, items, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount }: Props) {
   const router = useRouter()
   const { success, error: toastError, info } = useToast()
   const [loading, setLoading] = useState(false)
@@ -28,7 +34,8 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
   function sendWhatsApp() {
     if (!customerPhone) { toastError('No phone number on file for this customer'); return }
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
-    const msg = `Hello ${customerName}, please find your quote *${quoteNumber}* from Akoben Event Rentals.\n\nTotal: GHS ${total.toFixed(2)}\nExpires: ${expiresAt}\n\nPlease reply to confirm or request changes. Thank you!`
+    const pdfUrl = `${window.location.origin}/api/pdf/quote/${quoteId}`
+    const msg = `Hello ${customerName}, please find your quote *${quoteNumber}* from Akoben Event Rentals.\n\nTotal: GHS ${total.toFixed(2)}\nExpires: ${expiresAt}\n\nItemized quote: ${pdfUrl}\n\nPlease reply to confirm or request changes. Thank you!`
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -42,7 +49,13 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
         body: JSON.stringify({
           to: customerEmail,
           subject: `Your Quote ${quoteNumber} — Akoben Event Rentals`,
-          html: quoteEmailHtml({ customerName, quoteNumber, total, expiresAt, viewUrl: window.location.href }),
+          html: quoteEmailHtml({
+            customerName, quoteNumber, total, expiresAt,
+            // Public, no-login PDF — the previous link pointed at the auth-gated dashboard page
+            viewUrl: `${window.location.origin}/api/pdf/quote/${quoteId}`,
+            items, deliveryFee, setupFee, securityDeposit,
+            additionalChargesDescription, additionalChargesAmount,
+          }),
         }),
       })
       if (res.ok) {
@@ -105,6 +118,8 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
       delivery_fee:     quote.delivery_fee,
       setup_fee:        quote.setup_fee,
       security_deposit: quote.security_deposit,
+      additional_charges_description: quote.additional_charges_description,
+      additional_charges_amount: quote.additional_charges_amount,
       discount_pct:     quote.discount_pct,
       tax_rate:         quote.tax_rate,
       status:           'confirmed',
@@ -127,10 +142,12 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
       const deliveryFee = quote.delivery_fee ?? 0
       const setupFee = quote.setup_fee ?? 0
       const securityDeposit = quote.security_deposit ?? 0
+      const additionalChargesAmount = quote.additional_charges_amount ?? 0
       const taxable = subtotal - discountAmount + deliveryFee + setupFee
       const taxAmount = Math.round(taxable * (quote.tax_rate ?? 0) / 100 * 100) / 100
-      const totalAmount = taxable + taxAmount + securityDeposit
-      const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+      const totalAmount = taxable + taxAmount + securityDeposit + additionalChargesAmount
+      // Payment is due on pickup day, not a fixed number of days after creation
+      const dueDate = (order.pickup_date ?? new Date().toISOString()).slice(0, 10)
 
       const { data: invoice } = await supabase.from('invoices').insert({
         order_id: order.id,
@@ -140,6 +157,8 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
         delivery_fee: deliveryFee,
         setup_fee: setupFee,
         security_deposit: securityDeposit,
+        additional_charges_description: quote.additional_charges_description,
+        additional_charges_amount: additionalChargesAmount,
         tax_amount: taxAmount,
         total: totalAmount,
         amount_paid: 0,

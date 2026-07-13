@@ -4,6 +4,7 @@ import Badge from '@/components/ui/Badge'
 import { formatGHS, formatDate, formatDateTime } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import QuoteActions from './QuoteActions'
+import PaymentTermsNotice from '@/components/ui/PaymentTermsNotice'
 import type { QuoteStatus } from '@/types/database'
 
 const STATUS_VARIANTS: Record<QuoteStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
@@ -46,6 +47,16 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               total={quote.total}
               expiresAt={formatDate(quote.expires_at)}
               convertedToOrder={quote.converted_to_order}
+              items={(items ?? []).map(i => ({
+                name: (i.inventory_items as any)?.name ?? 'Item',
+                quantity: i.quantity,
+                lineTotal: i.line_total,
+              }))}
+              deliveryFee={(quote as any).delivery_fee}
+              setupFee={(quote as any).setup_fee}
+              securityDeposit={(quote as any).security_deposit}
+              additionalChargesDescription={(quote as any).additional_charges_description}
+              additionalChargesAmount={(quote as any).additional_charges_amount}
             />
           </div>
         }
@@ -104,6 +115,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               {(quote as any).setup_fee > 0 && <div className="flex justify-between text-gray-600"><span>Drop Off / Breakdown Fee</span><span>{formatGHS((quote as any).setup_fee)}</span></div>}
               {quote.tax_amount > 0 && <div className="flex justify-between text-gray-600"><span>VAT ({quote.tax_rate}%)</span><span>{formatGHS(quote.tax_amount)}</span></div>}
               {(quote as any).security_deposit > 0 && <div className="flex justify-between text-gray-600"><span>Security Deposit</span><span>{formatGHS((quote as any).security_deposit)}</span></div>}
+              {(quote as any).additional_charges_amount > 0 && <div className="flex justify-between text-gray-600"><span>{(quote as any).additional_charges_description || 'Additional Charges'}</span><span>{formatGHS((quote as any).additional_charges_amount)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(quote.total)}</span>
               </div>
@@ -147,6 +159,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
       </div>
+      <PaymentTermsNotice />
     </div>
   )
 }

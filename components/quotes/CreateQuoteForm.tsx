@@ -28,6 +28,8 @@ interface InitialQuoteData {
   delivery_fee: number
   setup_fee: number
   security_deposit: number
+  additional_charges_description: string | null
+  additional_charges_amount: number
   discount_pct: number
   notes: string | null
   quote_items: { item_id: string; quantity: number; unit_rate: number; rental_days: number; inventory_items: { name: string } | null }[]
@@ -58,6 +60,8 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
   const [securityDepositValue, setSecurityDepositValue] = useState(
     initialData?.security_deposit ? String(initialData.security_deposit) : ''
   )
+  const [additionalChargesDescription, setAdditionalChargesDescription] = useState(initialData?.additional_charges_description ?? '')
+  const [additionalChargesAmount, setAdditionalChargesAmount] = useState(String(initialData?.additional_charges_amount ?? '0'))
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [lineItems, setLineItems] = useState<LineItem[]>(
     initialData?.quote_items?.map(qi => ({
@@ -87,7 +91,8 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
       ? Math.round(totalBeforeDeposit * parseFloat(securityDepositValue) / 100 * 100) / 100
       : parseFloat(securityDepositValue)
     : 0
-  const total = totalBeforeDeposit + securityDeposit
+  const addCharges = parseFloat(additionalChargesAmount || '0')
+  const total = totalBeforeDeposit + securityDeposit + addCharges
 
   const filteredItems = inventoryItems.filter(i =>
     i.quantity_available > 0 &&
@@ -125,6 +130,8 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
       delivery_fee:    dFee,
       setup_fee:       sFee,
       security_deposit: securityDeposit,
+      additional_charges_description: additionalChargesDescription || null,
+      additional_charges_amount: addCharges,
       discount_pct:    parseFloat(discountPct) || 0,
       subtotal:        subtotal,
       tax_rate:        GHANA_VAT_RATE,
@@ -247,6 +254,17 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
                 <input type="number" min="0" step="0.01" value={setupFee} onChange={e => setSetupFee(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Charges Description</label>
+                <input value={additionalChargesDescription} onChange={e => setAdditionalChargesDescription(e.target.value)}
+                  placeholder="e.g. Late return fee"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Charges Amount (₵)</label>
+                <input type="number" min="0" step="0.01" value={additionalChargesAmount} onChange={e => setAdditionalChargesAmount(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes (included in quote email)</label>
                 <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)}
@@ -327,6 +345,7 @@ export default function CreateQuoteForm({ customers, inventoryItems, initialData
               {sFee > 0 && <div className="flex justify-between text-gray-600"><span>Drop Off / Breakdown Fee</span><span>{formatGHS(sFee)}</span></div>}
               {taxAmount > 0 && <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(taxAmount)}</span></div>}
               {securityDeposit > 0 && <div className="flex justify-between text-amber-600"><span>Security Deposit</span><span>{formatGHS(securityDeposit)}</span></div>}
+              {addCharges > 0 && <div className="flex justify-between text-gray-600"><span>{additionalChargesDescription || 'Additional Charges'}</span><span>{formatGHS(addCharges)}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(total)}</span>
               </div>

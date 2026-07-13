@@ -23,10 +23,15 @@ interface Props {
   balanceDue?: number
   items?: InvoiceLineItem[]
   momoNumber?: string | null
+  deliveryFee?: number
+  setupFee?: number
+  securityDeposit?: number
+  additionalChargesDescription?: string | null
+  additionalChargesAmount?: number
 }
 
 // Header actions only — Email Invoice, WhatsApp, Send Payment Link, PDF
-export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue, items = [], momoNumber }: Props) {
+export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue, items = [], momoNumber, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
@@ -79,7 +84,12 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
         body: JSON.stringify({
           to: customerEmail,
           subject: `Invoice ${invoiceNumber} — Akoben Event Rentals`,
-          html: invoiceEmailHtml({ customerName, invoiceNumber, total: balanceDue ?? total, dueDate, items, momoNumber: momoNumber ?? undefined }),
+          html: invoiceEmailHtml({
+            customerName, invoiceNumber, total: balanceDue ?? total, dueDate, items,
+            momoNumber: momoNumber ?? undefined,
+            deliveryFee, setupFee, securityDeposit,
+            additionalChargesDescription, additionalChargesAmount,
+          }),
         }),
       })
       if (res.ok) {

@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import type { OrderStatus } from '@/types/database'
 import OrderActions from './OrderActions'
 import RemoveItemLink from './RemoveItemLink'
+import PaymentTermsNotice from '@/components/ui/PaymentTermsNotice'
 import { computeDateRangeAvailability } from '@/lib/availability'
 import { AlertTriangle, Check } from 'lucide-react'
 
@@ -18,9 +19,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const { id } = await params
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: order }, { data: items }] = await Promise.all([
+  const [{ data: order }, { data: items }, { data: linkedInvoice }] = await Promise.all([
     supabase.from('orders_with_customer').select('*').eq('id', id).single(),
     supabase.from('order_items').select('*, inventory_items(id, name, sku)').eq('order_id', id),
+    supabase.from('invoices').select('security_deposit_refunded').eq('order_id', id).limit(1).maybeSingle(),
   ])
 
   if (!order) notFound()
@@ -63,6 +65,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               customerEmail={order.customer_email}
               eventName={order.event_name}
               total={(order as any).total}
+              items={(items ?? []).map(i => ({
+                name: (i.inventory_items as any)?.name ?? 'Item',
+                quantity: i.quantity,
+                lineTotal: i.line_total,
+              }))}
+              deliveryFee={(order as any).delivery_fee}
+              setupFee={(order as any).setup_fee}
+              securityDeposit={(order as any).security_deposit}
+              additionalChargesDescription={(order as any).additional_charges_description}
+              additionalChargesAmount={(order as any).additional_charges_amount}
             />
           </div>
         }
@@ -152,7 +164,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {order.delivery_fee > 0 && (
                 <div className="flex justify-between text-gray-600"><span>Delivery</span><span>{formatGHS(order.delivery_fee)}</span></div>
               )}
+              {(order as any).setup_fee > 0 && (
+                <div className="flex justify-between text-gray-600"><span>Drop Off / Breakdown Fee</span><span>{formatGHS((order as any).setup_fee)}</span></div>
+              )}
               {order.tax_amount > 0 && <div className="flex justify-between text-gray-600"><span>VAT (15%)</span><span>{formatGHS(order.tax_amount)}</span></div>}
+              {(order as any).security_deposit > 0 && (
+                <div className="flex justify-between text-sm text-amber-600">
+                  <span>Security Deposit {linkedInvoice?.security_deposit_refunded && <span className="text-green-600">(Refunded)</span>}</span>
+                  <span>{formatGHS((order as any).security_deposit)}</span>
+                </div>
+              )}
+              {(order as any).additional_charges_amount > 0 && (
+                <div className="flex justify-between text-gray-600"><span>{(order as any).additional_charges_description || 'Additional Charges'}</span><span>{formatGHS((order as any).additional_charges_amount)}</span></div>
+              )}
               <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100 text-base">
                 <span>Total</span><span>{formatGHS(order.total)}</span>
               </div>
@@ -213,6 +237,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
       </div>
+      <PaymentTermsNotice />
     </div>
   )
 }

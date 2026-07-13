@@ -29,6 +29,12 @@ export const GHANA_VAT_RATE = 0
 // before an event can be booked. Do not hardcode this percentage elsewhere.
 export const BOOKING_DEPOSIT_THRESHOLD_PCT = 50
 
+// Standard policy notice — shown on Quote, Invoice, and Order pages/emails/PDFs (client request, 2026-07).
+export const STANDARD_PAYMENT_TERMS_NOTICE =
+  `A ${BOOKING_DEPOSIT_THRESHOLD_PCT}% deposit is required to confirm and book your reservation. ` +
+  `The remaining 100% balance is due on the day of pick-up. The security deposit will be refunded ` +
+  `once all rented items are returned in good condition with no missing pieces.`
+
 export function calculateVAT(subtotal: number, vatRate = GHANA_VAT_RATE): number {
   return Math.round((subtotal * vatRate / 100) * 100) / 100
 }

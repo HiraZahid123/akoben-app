@@ -38,6 +38,8 @@ interface InitialOrderData {
   delivery_fee: number
   setup_fee: number
   security_deposit: number
+  additional_charges_description: string | null
+  additional_charges_amount: number
   discount_pct: number
   internal_notes: string | null
   customer_notes: string | null
@@ -65,6 +67,8 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
   const [deliveryFee, setDeliveryFee] = useState(String(initialData?.delivery_fee ?? '0'))
   const [setupFee, setSetupFee] = useState(String(initialData?.setup_fee ?? '0'))
   const [securityDeposit, setSecurityDeposit] = useState(String(initialData?.security_deposit ?? '0'))
+  const [additionalChargesDescription, setAdditionalChargesDescription] = useState(initialData?.additional_charges_description ?? '')
+  const [additionalChargesAmount, setAdditionalChargesAmount] = useState(String(initialData?.additional_charges_amount ?? '0'))
   const [discountPct, setDiscountPct] = useState(String(initialData?.discount_pct ?? '0'))
   const [internalNotes, setInternalNotes] = useState(initialData?.internal_notes ?? '')
   const [customerNotes, setCustomerNotes] = useState(initialData?.customer_notes ?? '')
@@ -98,7 +102,8 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
   const taxable = subtotal - discountAmount + dFee + sFee
   const taxAmount = Math.round(taxable * GHANA_VAT_RATE / 100 * 100) / 100
   const secDeposit = parseFloat(securityDeposit || '0')
-  const total = taxable + taxAmount + secDeposit
+  const addCharges = parseFloat(additionalChargesAmount || '0')
+  const total = taxable + taxAmount + secDeposit + addCharges
   const depositRequired = Math.round(total * BOOKING_DEPOSIT_THRESHOLD_PCT / 100 * 100) / 100
 
   function addItem(item: ItemOption) {
@@ -150,6 +155,8 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
       delivery_fee:    dFee,
       setup_fee:       sFee,
       security_deposit: secDeposit,
+      additional_charges_description: additionalChargesDescription || null,
+      additional_charges_amount: addCharges,
       subtotal:        subtotal,
       discount_pct:    parseFloat(discountPct) || 0,
       discount_amount: discountAmount,
@@ -194,6 +201,8 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
           delivery_fee: dFee,
           setup_fee: sFee,
           security_deposit: secDeposit,
+          additional_charges_description: additionalChargesDescription || null,
+          additional_charges_amount: addCharges,
           tax_amount: taxAmount,
           total,
           balance_due: Math.max(0, total - amtPaid),
@@ -318,6 +327,25 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </>}
+            </div>
+          </div>
+
+          {/* Additional Charges */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h2 className="font-semibold text-gray-800">Additional Charges</h2>
+            <p className="text-xs text-gray-400 -mt-2">For unplanned extra charges, e.g. a late return fee.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <input value={additionalChargesDescription} onChange={e => setAdditionalChargesDescription(e.target.value)}
+                  placeholder="e.g. Late return fee"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₵)</label>
+                <input type="number" min="0" step="0.01" value={additionalChargesAmount} onChange={e => setAdditionalChargesAmount(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
             </div>
           </div>
 
@@ -458,6 +486,12 @@ export default function CreateOrderForm({ customers, inventoryItems, initialData
                 <div className="flex justify-between text-amber-600">
                   <span>Security Deposit</span>
                   <span>{formatGHS(secDeposit)}</span>
+                </div>
+              )}
+              {addCharges > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>{additionalChargesDescription || 'Additional Charges'}</span>
+                  <span>{formatGHS(addCharges)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-100">

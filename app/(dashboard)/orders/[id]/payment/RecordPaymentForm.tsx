@@ -80,11 +80,7 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
 
       // Fetch all payments for this invoice to compute totals correctly
       if (invoiceId) {
-        const { data: allPayments } = await supabase
-          .from('payments')
-          .select('amount')
-          .eq('invoice_id', invoiceId)
-        const totalPaid = (allPayments ?? []).reduce((s, p) => s + (p.amount ?? 0), 0)
+        const totalPaid = await computeRentalAmountPaid(invoiceId)
         const remaining = Math.max(0, invoiceTotal - totalPaid)
         const newStatus = remaining <= 0.01 ? 'paid' : totalPaid > 0 ? 'partial' : 'unpaid'
         await supabase.from('invoices').update({
@@ -130,10 +126,21 @@ export default function RecordPaymentForm({ orderId, invoiceId, customerId, bala
     }
   }
 
+  // Amount paid toward the rental itself — excludes security deposit refund rows, since
+  // returning the deposit closes out the deposit and must not reopen the rental balance.
+  async function computeRentalAmountPaid(forInvoiceId: string) {
+    const { data: allPayments } = await supabase
+      .from('payments')
+      .select('amount, refund_reason')
+      .eq('invoice_id', forInvoiceId)
+    return (allPayments ?? [])
+      .filter(p => p.refund_reason !== 'Security deposit refund')
+      .reduce((s, p) => s + (p.amount ?? 0), 0)
+  }
+
   async function syncInvoiceAfterRefund() {
     if (!invoiceId) return
-    const { data: allPayments } = await supabase.from('payments').select('amount').eq('invoice_id', invoiceId)
-    const totalPaid = (allPayments ?? []).reduce((s, p) => s + (p.amount ?? 0), 0)
+    const totalPaid = await computeRentalAmountPaid(invoiceId)
     const remaining = Math.max(0, invoiceTotal - totalPaid)
     const newStatus = remaining <= 0.01 ? 'paid' : totalPaid > 0.01 ? 'partial' : 'unpaid'
     await supabase.from('invoices').update({

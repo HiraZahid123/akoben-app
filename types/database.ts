@@ -117,6 +117,7 @@ export interface Order {
   venue_gps: string | null
   delivery_fee: number
   setup_fee: number
+  security_deposit: number
   subtotal: number
   discount_pct: number
   discount_amount: number
@@ -166,6 +167,10 @@ export interface Quote {
   venue_address: string | null
   venue_region: GhanaRegion | null
   delivery_fee: number
+  setup_fee: number
+  security_deposit: number
+  additional_charges_description: string | null
+  additional_charges_amount: number
   subtotal: number
   discount_pct: number
   tax_rate: number
@@ -186,6 +191,11 @@ export interface Invoice {
   customer_id: string
   subtotal: number
   delivery_fee: number
+  setup_fee: number
+  security_deposit: number
+  security_deposit_refunded: boolean
+  additional_charges_description: string | null
+  additional_charges_amount: number
   tax_amount: number
   total: number
   amount_paid: number

@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import InvoiceActions from './InvoiceActions'
 import InvoiceBookingActions from './InvoiceBookingActions'
 import VoidButton from './VoidButton'
+import PaymentTermsNotice from '@/components/ui/PaymentTermsNotice'
 import type { InvoiceStatus } from '@/types/database'
 import { Download } from 'lucide-react'
 
@@ -60,6 +61,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             dueDate={formatDate(invoice.due_date)}
             items={emailLineItems}
             momoNumber={momoNumber}
+            deliveryFee={invoice.delivery_fee}
+            setupFee={(invoice as any).setup_fee}
+            securityDeposit={invoice.security_deposit}
+            additionalChargesDescription={(invoice as any).additional_charges_description}
+            additionalChargesAmount={(invoice as any).additional_charges_amount}
           />
         }
       />
@@ -102,6 +108,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                   <span>Security Deposit {invoice.security_deposit_refunded && <span className="text-green-600">(Refunded)</span>}</span>
                   <span>{formatGHS(invoice.security_deposit)}</span>
                 </div>
+              )}
+              {(invoice as any).additional_charges_amount > 0 && (
+                <div className="flex justify-between text-sm text-gray-600"><span>{(invoice as any).additional_charges_description || 'Additional Charges'}</span><span>{formatGHS((invoice as any).additional_charges_amount)}</span></div>
               )}
               <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-200">
                 <span>Total</span><span>{formatGHS(invoice.total)}</span>
@@ -236,6 +245,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           )}
         </div>
       </div>
+      <PaymentTermsNotice />
     </div>
   )
 }

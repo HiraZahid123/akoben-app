@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/ToastProvider'
+import { orderEmailHtml } from '@/lib/email-client'
 import type { OrderStatus } from '@/types/database'
 import { Receipt, FileText, Mail, MessageCircle, Ban } from 'lucide-react'
 
@@ -18,7 +19,10 @@ const STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
   complete: 'Order marked as complete',
 }
 
-export default function OrderActions({ orderId, currentStatus, orderNumber, customerName, customerPhone, customerEmail, eventName, total }: {
+export default function OrderActions({
+  orderId, currentStatus, orderNumber, customerName, customerPhone, customerEmail, eventName, total,
+  items, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount,
+}: {
   orderId: string
   currentStatus: OrderStatus
   orderNumber?: string
@@ -27,6 +31,12 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
   customerEmail?: string | null
   eventName?: string
   total?: number
+  items?: { name: string; quantity: number; lineTotal: number }[]
+  deliveryFee?: number
+  setupFee?: number
+  securityDeposit?: number
+  additionalChargesDescription?: string | null
+  additionalChargesAmount?: number
 }) {
   const router = useRouter()
   const { success, error } = useToast()
@@ -50,7 +60,18 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
         body: JSON.stringify({
           to: customerEmail,
           subject: `Order ${orderNumber} — Akoben Event Rentals`,
-          html: `<p>Dear ${customerName},</p><p>Your order <strong>${orderNumber}</strong> for <strong>${eventName}</strong> has been updated.</p><p>Total: <strong>GHS ${(total ?? 0).toFixed(2)}</strong></p><p>Please contact us if you have any questions. Thank you for booking with Akoben Event Rentals!</p>`,
+          html: orderEmailHtml({
+            customerName: customerName ?? '',
+            orderNumber: orderNumber ?? '',
+            eventName: eventName ?? '',
+            total: total ?? 0,
+            items,
+            deliveryFee,
+            setupFee,
+            securityDeposit,
+            additionalChargesDescription,
+            additionalChargesAmount,
+          }),
         }),
       })
       if (res.ok) success(`Order emailed to ${customerEmail}`)
@@ -85,7 +106,8 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
     }
     const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).single()
     if (!order) { error('Could not load order'); setLoading(false); return }
-    const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+    // Payment is due on pickup day, not a fixed number of days after creation
+    const dueDate = ((order as any).pickup_date ?? new Date().toISOString()).slice(0, 10)
     const total = (order as any).total ?? 0
     const { data: inv, error: invErr } = await supabase.from('invoices').insert({
       order_id: orderId,
@@ -93,6 +115,10 @@ export default function OrderActions({ orderId, currentStatus, orderNumber, cust
       due_date: dueDate,
       subtotal: (order as any).subtotal ?? 0,
       delivery_fee: (order as any).delivery_fee ?? 0,
+      setup_fee: (order as any).setup_fee ?? 0,
+      security_deposit: (order as any).security_deposit ?? 0,
+      additional_charges_description: (order as any).additional_charges_description ?? null,
+      additional_charges_amount: (order as any).additional_charges_amount ?? 0,
       tax_amount: (order as any).tax_amount ?? 0,
       total: total,
       amount_paid: 0,

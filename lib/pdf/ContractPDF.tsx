@@ -68,7 +68,8 @@ export default function ContractPDF({ order, orderItems, customer, business }: P
   const taxable = subtotal - discount + (order.delivery_fee ?? 0) + (order.setup_fee ?? 0)
   const tax = taxable * 0.15
   const securityDeposit = order.security_deposit ?? 0
-  const total = taxable + tax + securityDeposit
+  const additionalCharges = order.additional_charges_amount ?? 0
+  const total = taxable + tax + securityDeposit + additionalCharges
   const deposit = total * BOOKING_DEPOSIT_THRESHOLD_PCT / 100
 
   return (
@@ -193,6 +194,12 @@ export default function ContractPDF({ order, orderItems, customer, business }: P
             <View style={styles.totalRow}>
               <Text style={{ color: '#6b7280' }}>Security Deposit</Text>
               <Text>{ghsFormat(securityDeposit)}</Text>
+            </View>
+          )}
+          {additionalCharges > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={{ color: '#6b7280' }}>{order.additional_charges_description || 'Additional Charges'}</Text>
+              <Text>{ghsFormat(additionalCharges)}</Text>
             </View>
           )}
           <View style={styles.grandTotal}>

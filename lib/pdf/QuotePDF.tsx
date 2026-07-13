@@ -8,10 +8,10 @@ const styles = StyleSheet.create({
   logoPlaceholder: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: '#2563eb' },
   businessInfo: { textAlign: 'right', fontSize: 9, color: '#6b7280', lineHeight: 1.5 },
   title: { fontSize: 24, fontFamily: 'Helvetica-Bold', color: '#1f2937', marginBottom: 4 },
-  invoiceNumber: { fontSize: 12, color: '#6b7280', marginBottom: 24 },
+  quoteNumber: { fontSize: 12, color: '#6b7280', marginBottom: 24 },
   twoCol: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   billTo: { flex: 1 },
-  invoiceMeta: { flex: 1, textAlign: 'right' },
+  quoteMeta: { flex: 1, textAlign: 'right' },
   label: { fontSize: 8, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 },
   value: { fontSize: 10, color: '#1f2937', marginBottom: 2 },
   bold: { fontFamily: 'Helvetica-Bold' },
@@ -31,31 +31,24 @@ const styles = StyleSheet.create({
   grandTotal: { flexDirection: 'row', justifyContent: 'space-between', width: 200, borderTopWidth: 1, borderTopColor: '#1f2937', paddingTop: 6, marginTop: 4 },
   grandLabel: { fontFamily: 'Helvetica-Bold', fontSize: 12 },
   grandValue: { fontFamily: 'Helvetica-Bold', fontSize: 12 },
-  statusBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4, alignSelf: 'flex-end' },
-  balanceBox: { marginTop: 20, backgroundColor: '#f0fdf4', borderRadius: 6, padding: 12, borderWidth: 1, borderColor: '#bbf7d0' },
-  balanceBoxDue: { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
-  termsBox: { marginTop: 16, backgroundColor: '#eff6ff', borderRadius: 6, padding: 12, borderWidth: 1, borderColor: '#bfdbfe' },
+  termsBox: { marginTop: 24, backgroundColor: '#eff6ff', borderRadius: 6, padding: 12, borderWidth: 1, borderColor: '#bfdbfe' },
   termsText: { fontSize: 9, color: '#1e40af', lineHeight: 1.5 },
   footer: { position: 'absolute', bottom: 32, left: 40, right: 40, borderTopWidth: 0.5, borderTopColor: '#e5e7eb', paddingTop: 10, fontSize: 8, color: '#9ca3af', textAlign: 'center' },
 })
 
 interface Props {
-  invoice: any
-  order: any
-  orderItems: any[]
+  quote: any
+  quoteItems: any[]
   customer: any
   business: any
-  payments: any[]
 }
 
 function ghsFormat(n: number) {
   return `GHS ${(n ?? 0).toFixed(2)}`
 }
 
-export default function InvoicePDF({ invoice, order, orderItems, customer, business, payments }: Props) {
-  const amountPaid = payments.reduce((s: number, p: any) => s + (p.amount ?? 0), 0)
-  const balanceDue = (invoice.total_amount ?? invoice.total ?? 0) - amountPaid
-  const isPaid = balanceDue <= 0
+export default function QuotePDF({ quote, quoteItems, customer, business }: Props) {
+  const discountAmount = quote.subtotal && quote.discount_pct ? (quote.subtotal * quote.discount_pct / 100) : 0
 
   return (
     <Document>
@@ -82,30 +75,26 @@ export default function InvoicePDF({ invoice, order, orderItems, customer, busin
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>INVOICE</Text>
-        <Text style={styles.invoiceNumber}>{invoice.invoice_number}</Text>
+        <Text style={styles.title}>QUOTE</Text>
+        <Text style={styles.quoteNumber}>{quote.quote_number}</Text>
 
-        {/* Bill To / Invoice Meta */}
+        {/* Bill To / Quote Meta */}
         <View style={styles.twoCol}>
           <View style={styles.billTo}>
-            <Text style={styles.label}>Bill To</Text>
+            <Text style={styles.label}>Prepared For</Text>
             <Text style={[styles.value, styles.bold]}>{customer?.full_name}</Text>
             {customer?.company_name && <Text style={styles.value}>{customer.company_name}</Text>}
             {customer?.email && <Text style={styles.value}>{customer.email}</Text>}
             {customer?.phone && <Text style={styles.value}>{customer.phone}</Text>}
           </View>
-          <View style={styles.invoiceMeta}>
-            <Text style={styles.label}>Invoice Date</Text>
-            <Text style={styles.value}>{invoice.created_at ? new Date(invoice.created_at).toLocaleDateString('en-GH') : '—'}</Text>
-            <Text style={[styles.label, { marginTop: 8 }]}>Due Date</Text>
-            <Text style={[styles.value, styles.bold]}>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('en-GH') : '—'}</Text>
-            {order?.event_name && <>
+          <View style={styles.quoteMeta}>
+            <Text style={styles.label}>Quote Date</Text>
+            <Text style={styles.value}>{quote.created_at ? new Date(quote.created_at).toLocaleDateString('en-GH') : '—'}</Text>
+            <Text style={[styles.label, { marginTop: 8 }]}>Expires</Text>
+            <Text style={[styles.value, styles.bold]}>{quote.expires_at ? new Date(quote.expires_at).toLocaleDateString('en-GH') : '—'}</Text>
+            {quote.event_name && <>
               <Text style={[styles.label, { marginTop: 8 }]}>Event</Text>
-              <Text style={styles.value}>{order.event_name}</Text>
-            </>}
-            {order?.order_number && <>
-              <Text style={[styles.label, { marginTop: 8 }]}>Order Ref</Text>
-              <Text style={styles.value}>{order.order_number}</Text>
+              <Text style={styles.value}>{quote.event_name}</Text>
             </>}
           </View>
         </View>
@@ -119,13 +108,13 @@ export default function InvoicePDF({ invoice, order, orderItems, customer, busin
             <Text style={[styles.headerText, styles.colRate]}>Rate/Day</Text>
             <Text style={[styles.headerText, styles.colTotal]}>Total</Text>
           </View>
-          {orderItems.map((oi: any, i: number) => (
+          {quoteItems.map((qi: any, i: number) => (
             <View key={i} style={styles.tableRow}>
-              <Text style={styles.colItem}>{oi.inventory_items?.name ?? oi.item_id}</Text>
-              <Text style={styles.colQty}>{oi.quantity}</Text>
-              <Text style={styles.colDays}>{oi.rental_days}</Text>
-              <Text style={styles.colRate}>{ghsFormat(oi.unit_rate)}</Text>
-              <Text style={[styles.colTotal, styles.bold]}>{ghsFormat(oi.line_total ?? oi.unit_rate * oi.quantity * oi.rental_days)}</Text>
+              <Text style={styles.colItem}>{qi.inventory_items?.name ?? qi.item_id}</Text>
+              <Text style={styles.colQty}>{qi.quantity}</Text>
+              <Text style={styles.colDays}>{qi.rental_days}</Text>
+              <Text style={styles.colRate}>{ghsFormat(qi.unit_rate)}</Text>
+              <Text style={[styles.colTotal, styles.bold]}>{ghsFormat(qi.line_total ?? qi.unit_rate * qi.quantity * qi.rental_days)}</Text>
             </View>
           ))}
         </View>
@@ -134,56 +123,45 @@ export default function InvoicePDF({ invoice, order, orderItems, customer, busin
         <View style={styles.totals}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>{ghsFormat(invoice.subtotal ?? 0)}</Text>
+            <Text style={styles.totalValue}>{ghsFormat(quote.subtotal ?? 0)}</Text>
           </View>
-          {(invoice.discount_amount ?? 0) > 0 && (
+          {discountAmount > 0 && (
             <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: '#16a34a' }]}>Discount</Text>
-              <Text style={[styles.totalValue, { color: '#16a34a' }]}>−{ghsFormat(invoice.discount_amount)}</Text>
+              <Text style={[styles.totalLabel, { color: '#16a34a' }]}>Discount ({quote.discount_pct}%)</Text>
+              <Text style={[styles.totalValue, { color: '#16a34a' }]}>−{ghsFormat(discountAmount)}</Text>
             </View>
           )}
-          {(invoice.delivery_fee ?? 0) > 0 && (
+          {(quote.delivery_fee ?? 0) > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Delivery</Text>
-              <Text style={styles.totalValue}>{ghsFormat(invoice.delivery_fee)}</Text>
+              <Text style={styles.totalValue}>{ghsFormat(quote.delivery_fee)}</Text>
             </View>
           )}
-          {(invoice.setup_fee ?? 0) > 0 && (
+          {(quote.setup_fee ?? 0) > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Drop Off / Breakdown Fee</Text>
-              <Text style={styles.totalValue}>{ghsFormat(invoice.setup_fee)}</Text>
+              <Text style={styles.totalValue}>{ghsFormat(quote.setup_fee)}</Text>
             </View>
           )}
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>VAT (15%)</Text>
-            <Text style={styles.totalValue}>{ghsFormat(invoice.tax_amount ?? 0)}</Text>
+            <Text style={styles.totalLabel}>VAT ({quote.tax_rate ?? 0}%)</Text>
+            <Text style={styles.totalValue}>{ghsFormat(quote.tax_amount ?? 0)}</Text>
           </View>
-          {(invoice.security_deposit ?? 0) > 0 && (
+          {(quote.security_deposit ?? 0) > 0 && (
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Security Deposit{invoice.security_deposit_refunded ? ' (Refunded)' : ''}</Text>
-              <Text style={styles.totalValue}>{ghsFormat(invoice.security_deposit)}</Text>
+              <Text style={styles.totalLabel}>Security Deposit</Text>
+              <Text style={styles.totalValue}>{ghsFormat(quote.security_deposit)}</Text>
             </View>
           )}
-          {(invoice.additional_charges_amount ?? 0) > 0 && (
+          {(quote.additional_charges_amount ?? 0) > 0 && (
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>{invoice.additional_charges_description || 'Additional Charges'}</Text>
-              <Text style={styles.totalValue}>{ghsFormat(invoice.additional_charges_amount)}</Text>
+              <Text style={styles.totalLabel}>{quote.additional_charges_description || 'Additional Charges'}</Text>
+              <Text style={styles.totalValue}>{ghsFormat(quote.additional_charges_amount)}</Text>
             </View>
           )}
           <View style={styles.grandTotal}>
             <Text style={styles.grandLabel}>Total</Text>
-            <Text style={styles.grandValue}>{ghsFormat(invoice.total_amount ?? invoice.total ?? 0)}</Text>
-          </View>
-          {amountPaid > 0 && (
-            <View style={[styles.totalRow, { marginTop: 8 }]}>
-              <Text style={[styles.totalLabel, { color: '#16a34a' }]}>Amount Paid</Text>
-              <Text style={[styles.totalValue, { color: '#16a34a' }]}>{ghsFormat(amountPaid)}</Text>
-            </View>
-          )}
-          <View style={[styles.balanceBox, !isPaid ? styles.balanceBoxDue : {}]}>
-            <Text style={[styles.bold, { fontSize: 11, color: isPaid ? '#15803d' : '#dc2626' }]}>
-              {isPaid ? 'PAID IN FULL' : `Balance Due: ${ghsFormat(balanceDue)}`}
-            </Text>
+            <Text style={styles.grandValue}>{ghsFormat(quote.total ?? 0)}</Text>
           </View>
         </View>
 

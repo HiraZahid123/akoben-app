@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 const PUBLIC_PATHS = [
   '/login',
   '/api/auth',
-  // Contract PDF links are shared directly with customers via WhatsApp/email — they must not
-  // require a portal login. Order IDs are UUIDs, so this isn't guessable/enumerable.
+  // Contract and Quote PDF links are shared directly with customers via WhatsApp/email — they
+  // must not require a portal login. IDs are UUIDs, so these aren't guessable/enumerable.
   '/api/pdf/contract',
+  '/api/pdf/quote',
 ]
 
 export async function middleware(request: NextRequest) {
