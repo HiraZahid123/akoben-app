@@ -31,12 +31,18 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
   const { success, error: toastError, info } = useToast()
   const [loading, setLoading] = useState(false)
 
-  function sendWhatsApp() {
-    if (!customerPhone) { toastError('No phone number on file for this customer'); return }
+  function buildWhatsAppHref() {
+    if (!customerPhone) return null
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
-    const pdfUrl = `${window.location.origin}/api/pdf/quote/${quoteId}`
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const pdfUrl = `${origin}/api/pdf/quote/${quoteId}`
     const msg = `Hello ${customerName}, please find your quote *${quoteNumber}* from Akoben Event Rentals.\n\nTotal: GHS ${total.toFixed(2)}\nExpires: ${expiresAt}\n\nItemized quote: ${pdfUrl}\n\nPlease reply to confirm or request changes. Thank you!`
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+  }
+  const whatsAppHref = buildWhatsAppHref()
+
+  function handleWhatsAppClick(e: React.MouseEvent) {
+    if (!customerPhone) { e.preventDefault(); toastError('No phone number on file for this customer') }
   }
 
   async function sendQuoteEmail() {
@@ -183,10 +189,10 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
         {loading ? '...' : <><Mail size={14} /> {currentStatus === 'draft' ? 'Send to Customer' : 'Resend Email'}</>}
       </button>
-      <button onClick={sendWhatsApp}
+      <a href={whatsAppHref ?? '#'} onClick={handleWhatsAppClick} target="_blank" rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
         <MessageCircle size={14} /> WhatsApp
-      </button>
+      </a>
 
       {currentStatus === 'sent' && (
         <button onClick={markAccepted} disabled={loading}

@@ -36,8 +36,8 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
 
-  function sendWhatsApp() {
-    if (!customerPhone) { toastError('No phone number on file for this customer'); return }
+  function buildWhatsAppHref() {
+    if (!customerPhone) return null
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
     const amount = balanceDue ?? total
     const itemLines = items.length > 0
@@ -45,8 +45,9 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
       : ''
     const paymentLine = momoNumber ? `\nPlease use this MoMo number to make a payment: ${momoNumber}` : ''
     const msg = `Hello ${customerName}, your invoice *${invoiceNumber}* from Akoben Event Rentals is ready.\n${itemLines}\nBalance Due: GHS ${amount.toFixed(2)}\nDue Date: ${dueDate}\n\nPlease make payment at your earliest convenience.${paymentLine}\n\nThank you!`
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }
+  const whatsAppHref = buildWhatsAppHref()
 
   async function sendPaystackLink() {
     if (!customerEmail) { toastError('No email on file for this customer'); return }
@@ -110,10 +111,11 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
             {loading ? '...' : <><Mail size={14} /> Email Invoice</>}
           </button>
-          <button onClick={sendWhatsApp}
+          <a href={whatsAppHref ?? '#'} target="_blank" rel="noopener noreferrer"
+            onClick={e => { if (!whatsAppHref) { e.preventDefault(); toastError('No phone number on file for this customer') } }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors">
             <MessageCircle size={14} /> WhatsApp
-          </button>
+          </a>
           <button onClick={sendPaystackLink} disabled={loading}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
             title="Send a Paystack payment link to the customer">

@@ -35,12 +35,17 @@ export default function EmailContractButton({ orderId, orderNumber, customerEmai
     }
   }
 
-  function handleWhatsApp() {
-    if (!customerPhone) { toastError('No phone number on file for this customer'); return }
-    const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
-    const pdfUrl = `${window.location.origin}/api/pdf/contract/${orderId}`
-    const msg = `Hello, please find your rental agreement for order ${orderNumber} here: ${pdfUrl}`
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  const whatsAppHref = customerPhone
+    ? (() => {
+        const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
+        const pdfUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/pdf/contract/${orderId}` : ''
+        const msg = `Hello, please find your rental agreement for order ${orderNumber} here: ${pdfUrl}`
+        return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+      })()
+    : null
+
+  function handleWhatsAppClick(e: React.MouseEvent) {
+    if (!customerPhone) { e.preventDefault(); toastError('No phone number on file for this customer') }
   }
 
   return (
@@ -49,10 +54,10 @@ export default function EmailContractButton({ orderId, orderNumber, customerEmai
         className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
         {loading ? '…' : <><Mail size={12} /> Email</>}
       </button>
-      <button onClick={handleWhatsApp}
+      <a href={whatsAppHref ?? '#'} onClick={handleWhatsAppClick} target="_blank" rel="noopener noreferrer"
         className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors">
         <MessageCircle size={12} /> WhatsApp
-      </button>
+      </a>
     </div>
   )
 }

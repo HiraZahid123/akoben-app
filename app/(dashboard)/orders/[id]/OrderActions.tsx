@@ -43,12 +43,13 @@ export default function OrderActions({
   const [loading, setLoading] = useState(false)
   const transitions = TRANSITIONS[currentStatus] ?? []
 
-  function sendWhatsApp() {
-    if (!customerPhone) { error('No phone number on file for this customer'); return }
+  function buildWhatsAppHref() {
+    if (!customerPhone) return null
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
     const msg = `Hello ${customerName}, your order *${orderNumber}* has been confirmed with Akoben Event Rentals.\n\nEvent: ${eventName}\nTotal: GHS ${(total ?? 0).toFixed(2)}\n\nThank you for booking with us!`
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }
+  const whatsAppHref = buildWhatsAppHref()
 
   async function sendEmail() {
     if (!customerEmail) { error('No email on file for this customer'); return }
@@ -155,11 +156,11 @@ export default function OrderActions({
         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
         {loading ? '...' : <><Mail size={14} /> Email</>}
       </button>
-      {customerPhone && (
-        <button onClick={sendWhatsApp}
+      {whatsAppHref && (
+        <a href={whatsAppHref} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
           <MessageCircle size={14} /> WhatsApp
-        </button>
+        </a>
       )}
       {currentStatus !== 'cancelled' && currentStatus !== 'returned' && currentStatus !== 'complete' && (
         <button onClick={voidOrder} disabled={loading}
