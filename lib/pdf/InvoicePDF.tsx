@@ -154,10 +154,12 @@ export default function InvoicePDF({ invoice, order, orderItems, customer, busin
               <Text style={styles.totalValue}>{ghsFormat(invoice.setup_fee)}</Text>
             </View>
           )}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>VAT (15%)</Text>
-            <Text style={styles.totalValue}>{ghsFormat(invoice.tax_amount ?? 0)}</Text>
-          </View>
+          {(invoice.tax_amount ?? 0) > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>VAT (15%)</Text>
+              <Text style={styles.totalValue}>{ghsFormat(invoice.tax_amount)}</Text>
+            </View>
+          )}
           {(invoice.security_deposit ?? 0) > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Security Deposit{invoice.security_deposit_refunded ? ' (Refunded)' : ''}</Text>

@@ -186,10 +186,12 @@ export default function ContractPDF({ order, orderItems, customer, business }: P
               <Text>{ghsFormat(order.setup_fee)}</Text>
             </View>
           )}
-          <View style={styles.totalRow}>
-            <Text style={{ color: '#6b7280' }}>VAT (15%)</Text>
-            <Text>{ghsFormat(tax)}</Text>
-          </View>
+          {tax > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={{ color: '#6b7280' }}>VAT (15%)</Text>
+              <Text>{ghsFormat(tax)}</Text>
+            </View>
+          )}
           {securityDeposit > 0 && (
             <View style={styles.totalRow}>
               <Text style={{ color: '#6b7280' }}>Security Deposit</Text>

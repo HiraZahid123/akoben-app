@@ -143,10 +143,12 @@ export default function QuotePDF({ quote, quoteItems, customer, business }: Prop
               <Text style={styles.totalValue}>{ghsFormat(quote.setup_fee)}</Text>
             </View>
           )}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>VAT ({quote.tax_rate ?? 0}%)</Text>
-            <Text style={styles.totalValue}>{ghsFormat(quote.tax_amount ?? 0)}</Text>
-          </View>
+          {(quote.tax_amount ?? 0) > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>VAT ({quote.tax_rate ?? 0}%)</Text>
+              <Text style={styles.totalValue}>{ghsFormat(quote.tax_amount)}</Text>
+            </View>
+          )}
           {(quote.security_deposit ?? 0) > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Security Deposit</Text>
