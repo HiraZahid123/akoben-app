@@ -4,6 +4,7 @@ import Badge from '@/components/ui/Badge'
 import PaginationLinks from '@/components/ui/PaginationLinks'
 import { formatDate } from '@/lib/utils'
 import EmailContractButton from './EmailContractButton'
+import { getBaseUrl } from '@/lib/get-base-url'
 import { Download } from 'lucide-react'
 
 const PAGE_SIZE = 50
@@ -15,6 +16,7 @@ export default async function ContractsPage({ searchParams }: { searchParams: Pr
   const to = from + PAGE_SIZE - 1
 
   const supabase = await createServerSupabaseClient()
+  const baseUrl = await getBaseUrl()
 
   const { data: orders, count } = await supabase
     .from('orders_with_customer')
@@ -88,6 +90,7 @@ export default async function ContractsPage({ searchParams }: { searchParams: Pr
                           orderNumber={order.order_number}
                           customerEmail={order.customer_email}
                           customerPhone={order.customer_phone}
+                          baseUrl={baseUrl}
                         />
                       </div>
                     </td>

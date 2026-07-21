@@ -5,6 +5,7 @@ import { formatGHS, formatDate, formatDateTime } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import QuoteActions from './QuoteActions'
 import PaymentTermsNotice from '@/components/ui/PaymentTermsNotice'
+import { getBaseUrl } from '@/lib/get-base-url'
 import type { QuoteStatus } from '@/types/database'
 
 const STATUS_VARIANTS: Record<QuoteStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
@@ -14,6 +15,7 @@ const STATUS_VARIANTS: Record<QuoteStatus, 'default' | 'info' | 'success' | 'war
 export default async function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
+  const baseUrl = await getBaseUrl()
 
   const [{ data: quote }, { data: items }] = await Promise.all([
     supabase.from('quotes').select('*, customers(id, full_name, company_name, email, phone)').eq('id', id).single(),
@@ -57,6 +59,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
               securityDeposit={(quote as any).security_deposit}
               additionalChargesDescription={(quote as any).additional_charges_description}
               additionalChargesAmount={(quote as any).additional_charges_amount}
+              baseUrl={baseUrl}
             />
           </div>
         }

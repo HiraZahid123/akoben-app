@@ -8,6 +8,7 @@ import OrderActions from './OrderActions'
 import RemoveItemLink from './RemoveItemLink'
 import PaymentTermsNotice from '@/components/ui/PaymentTermsNotice'
 import { computeDateRangeAvailability } from '@/lib/availability'
+import { getBaseUrl } from '@/lib/get-base-url'
 import { AlertTriangle, Check } from 'lucide-react'
 
 const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'warning' | 'danger' | 'purple'> = {
@@ -18,6 +19,7 @@ const STATUS_VARIANTS: Record<OrderStatus, 'default' | 'info' | 'success' | 'war
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
+  const baseUrl = await getBaseUrl()
 
   const [{ data: order }, { data: items }, { data: linkedInvoice }] = await Promise.all([
     supabase.from('orders_with_customer').select('*').eq('id', id).single(),
@@ -75,6 +77,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               securityDeposit={(order as any).security_deposit}
               additionalChargesDescription={(order as any).additional_charges_description}
               additionalChargesAmount={(order as any).additional_charges_amount}
+              baseUrl={baseUrl}
             />
           </div>
         }

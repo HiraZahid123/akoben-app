@@ -9,9 +9,10 @@ interface Props {
   orderNumber: string
   customerEmail: string | null
   customerPhone: string | null
+  baseUrl: string
 }
 
-export default function EmailContractButton({ orderId, orderNumber, customerEmail, customerPhone }: Props) {
+export default function EmailContractButton({ orderId, orderNumber, customerEmail, customerPhone, baseUrl }: Props) {
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
 
@@ -38,7 +39,7 @@ export default function EmailContractButton({ orderId, orderNumber, customerEmai
   const whatsAppHref = customerPhone
     ? (() => {
         const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
-        const pdfUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/pdf/contract/${orderId}` : ''
+        const pdfUrl = `${baseUrl}/api/pdf/contract/${orderId}`
         const msg = `Hello, please find your rental agreement for order ${orderNumber} here: ${pdfUrl}`
         return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
       })()

@@ -24,9 +24,10 @@ interface Props {
   securityDeposit?: number
   additionalChargesDescription?: string | null
   additionalChargesAmount?: number
+  baseUrl: string
 }
 
-export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerPhone, customerName, total, expiresAt, convertedToOrder, items, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount }: Props) {
+export default function QuoteActions({ quoteId, quoteNumber, currentStatus, customerEmail, customerPhone, customerName, total, expiresAt, convertedToOrder, items, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount, baseUrl }: Props) {
   const router = useRouter()
   const { success, error: toastError, info } = useToast()
   const [loading, setLoading] = useState(false)
@@ -43,8 +44,7 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
       { label: 'Security Deposit', amount: securityDeposit ?? 0 },
       { label: additionalChargesDescription || 'Additional Charges', amount: additionalChargesAmount ?? 0 },
     ].filter(f => f.amount > 0).map(f => `${f.label}: GHS ${f.amount.toFixed(2)}`).join('\n')
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const pdfUrl = `${origin}/api/pdf/quote/${quoteId}`
+    const pdfUrl = `${baseUrl}/api/pdf/quote/${quoteId}`
     const msg = `Hello ${customerName}, please find your quote *${quoteNumber}* from Akoben Event Rentals.\n${itemLines}${feeLines ? feeLines + '\n' : ''}\nTotal: GHS ${total.toFixed(2)}\nExpires: ${expiresAt}\n\nItemized quote: ${pdfUrl}\n\nPlease reply to confirm or request changes. Thank you!`
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }

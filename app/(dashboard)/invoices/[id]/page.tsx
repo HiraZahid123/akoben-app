@@ -7,6 +7,7 @@ import InvoiceActions from './InvoiceActions'
 import InvoiceBookingActions from './InvoiceBookingActions'
 import VoidButton from './VoidButton'
 import PaymentTermsNotice from '@/components/ui/PaymentTermsNotice'
+import { getBaseUrl } from '@/lib/get-base-url'
 import type { InvoiceStatus } from '@/types/database'
 import { Download } from 'lucide-react'
 
@@ -24,6 +25,7 @@ const STATUS_LABELS: Partial<Record<InvoiceStatus, string>> = {
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
+  const baseUrl = await getBaseUrl()
 
   const [r1, r2, r3] = await Promise.all([
     supabase.from('invoices')
@@ -66,6 +68,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             securityDeposit={invoice.security_deposit}
             additionalChargesDescription={(invoice as any).additional_charges_description}
             additionalChargesAmount={(invoice as any).additional_charges_amount}
+            baseUrl={baseUrl}
           />
         }
       />

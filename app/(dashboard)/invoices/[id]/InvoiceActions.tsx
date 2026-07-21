@@ -28,10 +28,11 @@ interface Props {
   securityDeposit?: number
   additionalChargesDescription?: string | null
   additionalChargesAmount?: number
+  baseUrl: string
 }
 
 // Header actions only — Email Invoice, WhatsApp, Send Payment Link, PDF
-export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue, items = [], momoNumber, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount }: Props) {
+export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, currentStatus, customerEmail, customerPhone, customerName, total, dueDate, balanceDue, items = [], momoNumber, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount, baseUrl }: Props) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
@@ -44,8 +45,7 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
       ? '\n' + items.map(i => `• ${i.name} x${i.quantity} — GHS ${i.lineTotal.toFixed(2)}`).join('\n') + '\n'
       : ''
     const paymentLine = momoNumber ? `\nPlease use this MoMo number to make a payment: ${momoNumber}` : ''
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const pdfUrl = `${origin}/api/pdf/invoice/${invoiceId}`
+    const pdfUrl = `${baseUrl}/api/pdf/invoice/${invoiceId}`
     const msg = `Hello ${customerName}, your invoice *${invoiceNumber}* from Akoben Event Rentals is ready.\n${itemLines}\nBalance Due: GHS ${amount.toFixed(2)}\nDue Date: ${dueDate}\n\nFull itemized invoice: ${pdfUrl}\n\nPlease make payment at your earliest convenience.${paymentLine}\n\nThank you!`
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }

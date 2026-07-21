@@ -21,7 +21,7 @@ const STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
 
 export default function OrderActions({
   orderId, currentStatus, orderNumber, customerName, customerPhone, customerEmail, eventName, total,
-  items, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount,
+  items, deliveryFee, setupFee, securityDeposit, additionalChargesDescription, additionalChargesAmount, baseUrl,
 }: {
   orderId: string
   currentStatus: OrderStatus
@@ -37,6 +37,7 @@ export default function OrderActions({
   securityDeposit?: number
   additionalChargesDescription?: string | null
   additionalChargesAmount?: number
+  baseUrl: string
 }) {
   const router = useRouter()
   const { success, error } = useToast()
@@ -55,8 +56,7 @@ export default function OrderActions({
       { label: 'Security Deposit', amount: securityDeposit ?? 0 },
       { label: additionalChargesDescription || 'Additional Charges', amount: additionalChargesAmount ?? 0 },
     ].filter(f => f.amount > 0).map(f => `${f.label}: GHS ${f.amount.toFixed(2)}`).join('\n')
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const pdfUrl = `${origin}/api/pdf/contract/${orderId}`
+    const pdfUrl = `${baseUrl}/api/pdf/contract/${orderId}`
     const msg = `Hello ${customerName}, your order *${orderNumber}* has been confirmed with Akoben Event Rentals.\n\nEvent: ${eventName}\n${itemLines}${feeLines ? feeLines + '\n' : ''}\nTotal: GHS ${(total ?? 0).toFixed(2)}\n\nFull itemized breakdown: ${pdfUrl}\n\nThank you for booking with us!`
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }
