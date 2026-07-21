@@ -46,7 +46,18 @@ export default function OrderActions({
   function buildWhatsAppHref() {
     if (!customerPhone) return null
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
-    const msg = `Hello ${customerName}, your order *${orderNumber}* has been confirmed with Akoben Event Rentals.\n\nEvent: ${eventName}\nTotal: GHS ${(total ?? 0).toFixed(2)}\n\nThank you for booking with us!`
+    const itemLines = items && items.length > 0
+      ? '\n' + items.map(i => `• ${i.name} x${i.quantity} — GHS ${i.lineTotal.toFixed(2)}`).join('\n') + '\n'
+      : ''
+    const feeLines = [
+      { label: 'Delivery', amount: deliveryFee ?? 0 },
+      { label: 'Drop Off / Breakdown Fee', amount: setupFee ?? 0 },
+      { label: 'Security Deposit', amount: securityDeposit ?? 0 },
+      { label: additionalChargesDescription || 'Additional Charges', amount: additionalChargesAmount ?? 0 },
+    ].filter(f => f.amount > 0).map(f => `${f.label}: GHS ${f.amount.toFixed(2)}`).join('\n')
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const pdfUrl = `${origin}/api/pdf/contract/${orderId}`
+    const msg = `Hello ${customerName}, your order *${orderNumber}* has been confirmed with Akoben Event Rentals.\n\nEvent: ${eventName}\n${itemLines}${feeLines ? feeLines + '\n' : ''}\nTotal: GHS ${(total ?? 0).toFixed(2)}\n\nFull itemized breakdown: ${pdfUrl}\n\nThank you for booking with us!`
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }
   const whatsAppHref = buildWhatsAppHref()
@@ -72,6 +83,7 @@ export default function OrderActions({
             securityDeposit,
             additionalChargesDescription,
             additionalChargesAmount,
+            pdfUrl: `${window.location.origin}/api/pdf/contract/${orderId}`,
           }),
         }),
       })

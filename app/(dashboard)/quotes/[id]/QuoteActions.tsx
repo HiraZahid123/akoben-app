@@ -34,9 +34,18 @@ export default function QuoteActions({ quoteId, quoteNumber, currentStatus, cust
   function buildWhatsAppHref() {
     if (!customerPhone) return null
     const phone = customerPhone.replace(/\D/g, '').replace(/^0/, '233')
+    const itemLines = items && items.length > 0
+      ? '\n' + items.map(i => `• ${i.name} x${i.quantity} — GHS ${i.lineTotal.toFixed(2)}`).join('\n') + '\n'
+      : ''
+    const feeLines = [
+      { label: 'Delivery', amount: deliveryFee ?? 0 },
+      { label: 'Drop Off / Breakdown Fee', amount: setupFee ?? 0 },
+      { label: 'Security Deposit', amount: securityDeposit ?? 0 },
+      { label: additionalChargesDescription || 'Additional Charges', amount: additionalChargesAmount ?? 0 },
+    ].filter(f => f.amount > 0).map(f => `${f.label}: GHS ${f.amount.toFixed(2)}`).join('\n')
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const pdfUrl = `${origin}/api/pdf/quote/${quoteId}`
-    const msg = `Hello ${customerName}, please find your quote *${quoteNumber}* from Akoben Event Rentals.\n\nTotal: GHS ${total.toFixed(2)}\nExpires: ${expiresAt}\n\nItemized quote: ${pdfUrl}\n\nPlease reply to confirm or request changes. Thank you!`
+    const msg = `Hello ${customerName}, please find your quote *${quoteNumber}* from Akoben Event Rentals.\n${itemLines}${feeLines ? feeLines + '\n' : ''}\nTotal: GHS ${total.toFixed(2)}\nExpires: ${expiresAt}\n\nItemized quote: ${pdfUrl}\n\nPlease reply to confirm or request changes. Thank you!`
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }
   const whatsAppHref = buildWhatsAppHref()

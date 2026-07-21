@@ -44,7 +44,9 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
       ? '\n' + items.map(i => `• ${i.name} x${i.quantity} — GHS ${i.lineTotal.toFixed(2)}`).join('\n') + '\n'
       : ''
     const paymentLine = momoNumber ? `\nPlease use this MoMo number to make a payment: ${momoNumber}` : ''
-    const msg = `Hello ${customerName}, your invoice *${invoiceNumber}* from Akoben Event Rentals is ready.\n${itemLines}\nBalance Due: GHS ${amount.toFixed(2)}\nDue Date: ${dueDate}\n\nPlease make payment at your earliest convenience.${paymentLine}\n\nThank you!`
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const pdfUrl = `${origin}/api/pdf/invoice/${invoiceId}`
+    const msg = `Hello ${customerName}, your invoice *${invoiceNumber}* from Akoben Event Rentals is ready.\n${itemLines}\nBalance Due: GHS ${amount.toFixed(2)}\nDue Date: ${dueDate}\n\nFull itemized invoice: ${pdfUrl}\n\nPlease make payment at your earliest convenience.${paymentLine}\n\nThank you!`
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   }
   const whatsAppHref = buildWhatsAppHref()
@@ -90,6 +92,7 @@ export default function InvoiceActions({ invoiceId, orderId, invoiceNumber, curr
             momoNumber: momoNumber ?? undefined,
             deliveryFee, setupFee, securityDeposit,
             additionalChargesDescription, additionalChargesAmount,
+            pdfUrl: `${window.location.origin}/api/pdf/invoice/${invoiceId}`,
           }),
         }),
       })

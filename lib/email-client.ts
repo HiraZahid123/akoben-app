@@ -93,6 +93,7 @@ export function invoiceEmailHtml(params: {
   securityDeposit?: number
   additionalChargesDescription?: string | null
   additionalChargesAmount?: number
+  pdfUrl?: string
 }) {
   return `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
@@ -118,10 +119,10 @@ export function invoiceEmailHtml(params: {
         <p style="font-size:13px;color:#475569;">${PAYMENT_TERMS_NOTICE_HTML}</p>
         <p><strong>Pay via:</strong> MTN Mobile Money, Vodafone Cash, Bank Transfer, or Cash on pickup.</p>
         ${params.momoNumber ? `<p><strong>Please use this MoMo number to make a payment:</strong> ${params.momoNumber}</p>` : ''}
-        ${params.paystackLink ? `
         <div style="text-align:center;margin:32px 0;">
-          <a href="${params.paystackLink}" style="background:#00c3f7;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;">Pay Online Now</a>
-        </div>` : ''}
+          ${params.pdfUrl ? `<a href="${params.pdfUrl}" style="background:#2563eb;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;margin-right:8px;">View Itemized Invoice</a>` : ''}
+          ${params.paystackLink ? `<a href="${params.paystackLink}" style="background:#00c3f7;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;">Pay Online Now</a>` : ''}
+        </div>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:32px 0;">
         <p style="color:#94a3b8;font-size:12px;">Akoben Event Rentals &bull; Cape Coast, Ghana</p>
       </div>
@@ -139,6 +140,7 @@ export function orderEmailHtml(params: {
   securityDeposit?: number
   additionalChargesDescription?: string | null
   additionalChargesAmount?: number
+  pdfUrl?: string
 }) {
   return `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
@@ -161,6 +163,10 @@ export function orderEmailHtml(params: {
           <p style="margin:8px 0 0;"><strong>Total:</strong> ₵${params.total.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</p>
         </div>
         <p style="font-size:13px;color:#475569;">${PAYMENT_TERMS_NOTICE_HTML}</p>
+        ${params.pdfUrl ? `
+        <div style="text-align:center;margin:32px 0;">
+          <a href="${params.pdfUrl}" style="background:#2563eb;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;">View Full Order / Contract</a>
+        </div>` : ''}
         <p>Please contact us if you have any questions. Thank you for booking with Akoben Event Rentals!</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:32px 0;">
         <p style="color:#94a3b8;font-size:12px;">Akoben Event Rentals &bull; Cape Coast, Ghana</p>
